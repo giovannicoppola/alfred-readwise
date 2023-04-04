@@ -1,0 +1,40 @@
+{
+  "count": 9,
+  "next": "https://readwise.io/api/v2/books/?page=2",
+  "previous": null,
+  "results": [
+    {
+      "id": 1776,
+      "title": "Early Retirement Extreme",
+      "author": "Jacob Lund Fisker",
+      "category": "books",
+      "source": "kindle",
+      "num_highlights": 68,
+      "last_highlight_at": "2019-03-19T03:49:23Z",
+      "updated": "2020-10-01T17:47:31.234826Z",
+      "cover_image_url": "https://readwise.io/static/images/default-book-icon-2.png",
+      "highlights_url": "https://readwise.io/bookreview/1776",
+      "source_url": null,
+      "asin": "B0046LU7H0",
+      "tags": [],
+      "document_note": ""
+    },
+    {
+      "id": 1826,
+      "title": "What Is the Point of Universal Basic Income?",
+      "author": "David Perell",
+      "category": "articles",
+      "source": "api_article",
+      "num_highlights": 3,
+      "last_highlight_at": "2020-02-03T09:51:17Z",
+      "updated": "2020-03-17T06:44:44.601570Z",
+      "cover_image_url": "https://readwise.io/static/images/article4.png",
+      "highlights_url": "https://readwise.io/bookreview/1826",
+      "source_url": "https://perell.com/fellowship-essay/universal-basic-income",
+      "asin": null,
+      "tags": [],
+      "document_note": ""
+    },
+    ...
+  ]
+}

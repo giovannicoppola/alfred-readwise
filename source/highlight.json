@@ -1,0 +1,101 @@
+{
+	"count": 2,
+	"nextPageCursor": null,
+	"results": [
+		{
+			"user_book_id": 123,
+			"title": "Some title",
+			"author": "Some author",
+			"readable_title": "Some title",
+			"source": "raindrop",
+			"cover_image_url": "https://cover.com/image.png",
+			"unique_url": "",
+			"book_tags": [],
+			"category": "articles",
+			"document_note": "",
+			"readwise_url": "https://readwise.io/bookreview/123",
+			"source_url": "",
+			"asin": null,
+			"highlights": [
+				{
+					"id": 456,
+					"text": "“XPTO.”",
+					"location": 1,
+					"location_type": "order",
+					"note": null,
+					"color": "yellow",
+					"highlighted_at": "2022-09-13T16:41:53.186Z",
+					"created_at": "2022-09-13T16:41:53.186Z",
+					"updated_at": "2022-09-14T18:50:30.564Z",
+					"external_id": "6320b2bd7fbcdd7b0c000b3e",
+					"end_location": null,
+					"url": null,
+					"book_id": 123,
+					"tags": [],
+					"is_favorite": false,
+					"is_discard": false,
+					"readwise_url": "https://readwise.io/open/456"
+				},
+				{
+					"id": 890,
+					"text": "Foo Bar.",
+					"location": 2,
+					"location_type": "order",
+					"note": null,
+					"color": "yellow",
+					"highlighted_at": "2022-09-13T16:41:53.186Z",
+					"created_at": "2022-09-13T16:41:53.186Z",
+					"updated_at": "2022-09-14T18:50:30.568Z",
+					"external_id": "6320b2c77fbcdde217000b3f",
+					"end_location": null,
+					"url": null,
+					"book_id": 123,
+					"tags": [],
+					"is_favorite": false,
+					"is_discard": false,
+					"readwise_url": "https://readwise.io/open/890"
+				}
+			]
+		}
+	]
+}
+              
+
+
+
+
+{
+  "count": 1163,
+  "next": "https://readwise.io/api/v2/highlights?page=2",
+  "previous": null,
+  "results": [
+    {
+      "id": 59758950,
+      "text": "The fundamental belief of metaphysicians is THE BELIEF IN ANTITHESES OF VALUES.",
+      "note": "",
+      "location": 9,
+      "location_type": "order",
+      "highlighted_at": null,
+      "url": null,
+      "color": "",
+      "updated": "2020-10-01T12:58:44.716235Z",
+      "book_id": 2608248,
+      "tags": [
+        {
+           "id": 123456,
+           "name": "philosophy"
+        },
+        ...
+      ]
+    },
+    ...
+  ]
+}
+
+
+I have a list of dictionaries in python, like this: 
+[
+  {'booktitle': 'Lincoln', 'bookID': 232, 'highlights': 
+    [{'highTitle': 'myFirstHighlight', 'highID': 1},  {'highTitle': 'mySecondHighlight', 'highID': 2}]},
+  {'booktitle': 'Churchill', 'bookID': 255, 'highlights': 
+    [{'highTitle': 'myFirstHighlight', 'highID': 100},  {'highTitle': 'mySecondHighlight', 'highID': 200}]}]
