@@ -915,6 +915,8 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 			<string>SEARCH_SCOPE</string>
 		</dict>
 	</array>
+	<key>variablesdontexport</key>
+	<array/>
 	<key>version</key>
 	<string>0.1</string>
 	<key>webaddress</key>
