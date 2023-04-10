@@ -130,13 +130,14 @@ def makeLabelList():
 	all_dicts = []
 	for label in rs:
 		myTags = json.loads (label[0].replace("'", '"'))
-		
+		log (f"===== myTags from table: {myTags}")
 		for Tag in myTags:
+		    log (f"===== single Tag from table: {Tag}")
     # Convert dictionary to tuple to make it hashable
 		    all_dicts.append (Tag)
 	
 	unique_names = list(set(d['name'] for d in all_dicts))
-	
+	log (f"===== UNIQUE TAG NAMES: {unique_names}")
 	
 
 	# create the table
@@ -148,6 +149,7 @@ def makeLabelList():
 	# insert the unique names into the table
 
 	for name in unique_names:
+		log (f"===== inserting: {name}")
 		c.execute('INSERT INTO tags (name) VALUES (?)', (name,))
 
 	# commit the changes and close the connection
