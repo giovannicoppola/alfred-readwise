@@ -14,7 +14,7 @@ import sqlite3
 import os
 import shutil
 import requests
-import urllib
+import urllib.request
 from config import MY_DATABASE, TOKEN, log, IMAGE_FOLDER
 
 
@@ -103,12 +103,20 @@ def refreshReadwiseDatabase ():
 	rs = c.fetchall()
 	
 	for rec in rs:
-		# if rec[1]:
-		# 	ICON_PATH = f'{IMAGE_FOLDER}{rec[0]}.jpg'
-		# 	if not os.path.exists(ICON_PATH):
-		# 		log ("retrieving image" + ICON_PATH)
-		# 		urllib.request.urlretrieve(rec[1], ICON_PATH)
-		# else:
+		if rec[1]:
+			ICON_PATH = f'{IMAGE_FOLDER}{rec[0]}.jpg'
+			if not os.path.exists(ICON_PATH):
+				log ("retrieving image" + ICON_PATH)
+				try:
+					urllib.request.urlretrieve(rec[1], ICON_PATH)
+				except urllib.error.URLError as e:
+				    # If an exception occurs, print an error message and delete the file if it exists
+					log(f"Failed to download file: {e.reason}")
+					ICON_PATH = f'{IMAGE_FOLDER}{rec[0]}.jpg'
+					src = 'icons/supplementals.png'
+					shutil.copy(src, ICON_PATH)
+
+		else:
 			ICON_PATH = f'{IMAGE_FOLDER}{rec[0]}.jpg'
 			src = 'icons/supplementals.png'
 			shutil.copy(src, ICON_PATH)
@@ -130,14 +138,14 @@ def makeLabelList():
 	all_dicts = []
 	for label in rs:
 		myTags = json.loads (label[0].replace("'", '"'))
-		log (f"===== myTags from table: {myTags}")
+		#log (f"===== myTags from table: {myTags}")
 		for Tag in myTags:
-		    log (f"===== single Tag from table: {Tag}")
+		    #log (f"===== single Tag from table: {Tag}")
     # Convert dictionary to tuple to make it hashable
 		    all_dicts.append (Tag)
 	
 	unique_names = list(set(d['name'] for d in all_dicts))
-	log (f"===== UNIQUE TAG NAMES: {unique_names}")
+	#log (f"===== UNIQUE TAG NAMES: {unique_names}")
 	
 
 	# create the table
@@ -149,7 +157,7 @@ def makeLabelList():
 	# insert the unique names into the table
 
 	for name in unique_names:
-		log (f"===== inserting: {name}")
+		#log (f"===== inserting: {name}")
 		c.execute('INSERT INTO tags (name) VALUES (?)', (name,))
 
 	# commit the changes and close the connection
