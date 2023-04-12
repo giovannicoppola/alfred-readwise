@@ -103,12 +103,12 @@ def refreshReadwiseDatabase ():
 	rs = c.fetchall()
 	
 	for rec in rs:
-		if rec[1]:
-			ICON_PATH = f'{IMAGE_FOLDER}{rec[0]}.jpg'
-			if not os.path.exists(ICON_PATH):
-				log ("retrieving image" + ICON_PATH)
-				urllib.request.urlretrieve(rec[1], ICON_PATH)
-		else:
+		# if rec[1]:
+		# 	ICON_PATH = f'{IMAGE_FOLDER}{rec[0]}.jpg'
+		# 	if not os.path.exists(ICON_PATH):
+		# 		log ("retrieving image" + ICON_PATH)
+		# 		urllib.request.urlretrieve(rec[1], ICON_PATH)
+		# else:
 			ICON_PATH = f'{IMAGE_FOLDER}{rec[0]}.jpg'
 			src = 'icons/supplementals.png'
 			shutil.copy(src, ICON_PATH)
