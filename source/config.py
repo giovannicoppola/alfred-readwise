@@ -25,7 +25,7 @@ SEARCH_SCOPE = os.getenv('SEARCH_SCOPE')
 
 
 WF_BUNDLE = os.getenv('alfred_workflow_bundleid')
-DATA_FOLDER = os.path.expanduser('~')+"/Library/Application Support/Alfred/Workflow Data/"+WF_BUNDLE
+DATA_FOLDER = os.getenv('alfred_workflow_data')
 MY_DATABASE = f"{DATA_FOLDER}/readwise.db"
 IMAGE_FOLDER = f"{DATA_FOLDER}/images/"
 RefRate = int(os.getenv('RefreshRate'))

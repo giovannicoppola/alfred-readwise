@@ -58,6 +58,7 @@ src="https://img.shields.io/github/downloads/giovannicoppola/alfred-readwise/tot
 - standard search will be through highlight text and book titles. Multiple word (fragments) supported
 - typing `#` will prompt a label search which can be added to the standard search, multiple labels supported
 	- `enter` ↩️ will show the highlight in large font and copy to clipboard
+	- `shift-enter` ⇧↩️ will show the highlight in large font and copy to clipboard without closing Alfred
 	- `command-enter` ⌘↩️ will open the source URL if available (typically for tweets)
 	- `ctrl-enter` ^↩️ will open the highlight on Readwise
 	- `shift-ctrl-enter` ⇧^↩️ will open all highlights from that book on Readwise

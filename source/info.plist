@@ -63,6 +63,39 @@
 				<key>vitoclose</key>
 				<true/>
 			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>56834D1D-55F4-4D51-B8E7-A128C0049C6B</string>
+				<key>modifiers</key>
+				<integer>131072</integer>
+				<key>modifiersubtext</key>
+				<string>Show large font without closing Alfred</string>
+				<key>vitoclose</key>
+				<true/>
+			</dict>
+		</array>
+		<key>56834D1D-55F4-4D51-B8E7-A128C0049C6B</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>DE712F62-FBAB-42A3-9DDA-CAAA2EA1F6DC</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>578F2DF9-BCC0-4EFF-BF2B-251A238DCAAB</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
 		</array>
 		<key>5D93264C-C597-4BB0-92BD-6144D2819B3E</key>
 		<array>
@@ -526,6 +559,62 @@ python3 readwise-query.py "$1"
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alignment</key>
+				<integer>0</integer>
+				<key>backgroundcolor</key>
+				<string></string>
+				<key>fadespeed</key>
+				<integer>0</integer>
+				<key>fillmode</key>
+				<integer>0</integer>
+				<key>font</key>
+				<string>Georgia</string>
+				<key>ignoredynamicplaceholders</key>
+				<false/>
+				<key>largetypetext</key>
+				<string>{var:fullOutput}</string>
+				<key>textcolor</key>
+				<string>#00F900FF</string>
+				<key>wrapat</key>
+				<integer>100</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.largetype</string>
+			<key>uid</key>
+			<string>DE712F62-FBAB-42A3-9DDA-CAAA2EA1F6DC</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>autopaste</key>
+				<false/>
+				<key>clipboardtext</key>
+				<string>{var:fullOutput}</string>
+				<key>ignoredynamicplaceholders</key>
+				<false/>
+				<key>transient</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.clipboard</string>
+			<key>uid</key>
+			<string>578F2DF9-BCC0-4EFF-BF2B-251A238DCAAB</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.junction</string>
+			<key>uid</key>
+			<string>56834D1D-55F4-4D51-B8E7-A128C0049C6B</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
 	</array>
 	<key>readme</key>
 	<string># alfred-readwise
@@ -567,6 +656,7 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 - standard search will be through highlight text and book titles. Multiple word (fragments) supported
 - typing `#` will prompt a label search which can be added to the standard search, multiple labels supported
 	- `enter` ↩️ will show the highlight in large font and copy to clipboard
+	- `shift-enter` ⇧↩️ will show the highlight in large font and copy to clipboard without closing Alfred
 	- `command-enter` ⌘↩️ will open the source URL if available (typically for tweets)
 	- `ctrl-enter` ^↩️ will open the highlight on Readwise
 	- `shift-ctrl-enter` ⇧^↩️ will open all highlights from that book on Readwise
@@ -608,6 +698,20 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 			<real>675</real>
 			<key>ypos</key>
 			<real>140</real>
+		</dict>
+		<key>56834D1D-55F4-4D51-B8E7-A128C0049C6B</key>
+		<dict>
+			<key>xpos</key>
+			<real>570</real>
+			<key>ypos</key>
+			<real>890</real>
+		</dict>
+		<key>578F2DF9-BCC0-4EFF-BF2B-251A238DCAAB</key>
+		<dict>
+			<key>xpos</key>
+			<real>660</real>
+			<key>ypos</key>
+			<real>875</real>
 		</dict>
 		<key>5D93264C-C597-4BB0-92BD-6144D2819B3E</key>
 		<dict>
@@ -653,6 +757,13 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 			<key>ypos</key>
 			<real>340</real>
 		</dict>
+		<key>DE712F62-FBAB-42A3-9DDA-CAAA2EA1F6DC</key>
+		<dict>
+			<key>xpos</key>
+			<real>660</real>
+			<key>ypos</key>
+			<real>760</real>
+		</dict>
 		<key>E6EBFFF6-0A4B-4F13-B835-7E60BE6999CB</key>
 		<dict>
 			<key>xpos</key>
@@ -677,9 +788,9 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 		<key>F4F8B71F-C0EB-4675-9CAF-424BBAE41A4E</key>
 		<dict>
 			<key>xpos</key>
-			<real>645</real>
+			<real>640</real>
 			<key>ypos</key>
-			<real>445</real>
+			<real>455</real>
 		</dict>
 	</dict>
 	<key>userconfigurationconfig</key>
@@ -918,7 +1029,7 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 	<key>variablesdontexport</key>
 	<array/>
 	<key>version</key>
-	<string>0.2</string>
+	<string>0.2.1</string>
 	<key>webaddress</key>
 	<string>https://github.com/giovannicoppola/alfred-readwise</string>
 </dict>
