@@ -13,7 +13,7 @@ import sqlite3
 import re
 
 
-from config import TOKEN, ARTICLES_CHECK,BOOKS_CHECK, TWEETS_CHECK, PODCASTS_CHECK, SUPPLEMENTALS_CHECK, log, MY_DATABASE, RefRate, IMAGE_FOLDER, SEARCH_SCOPE
+from config import TOKEN, ARTICLES_CHECK,BOOKS_CHECK, TWEETS_CHECK, PODCASTS_CHECK, SUPPLEMENTALS_CHECK, log, MY_DATABASE, RefRate, IMAGE_FOLDER, IMAGE_H_FOLDER, SEARCH_SCOPE
 from readwise_fun import refreshReadwiseDatabase, makeLabelList
 MYINPUT = sys.argv[1].casefold()
 my_checks = {'books': BOOKS_CHECK, 'articles': ARTICLES_CHECK, 'tweets': TWEETS_CHECK, 'podcasts': PODCASTS_CHECK, 'supplementals': SUPPLEMENTALS_CHECK}
@@ -163,12 +163,13 @@ def queryItems(database, myInput):
                 sourceURLstring = f"open source URL"
             else:
                 sourceURLstring = "no source URL"
-            
+            myQuickLook = f"{IMAGE_H_FOLDER}{r['highID']}.jpg"
             result["items"].append({
                 "title": r['highText'],
                 
                 'subtitle': f"{myCounter}/{totCount} {r['title']}-{r['author']} {myTags}",
                 'valid': True,
+                "quicklookurl": myQuickLook,
                 'variables': {
                     "fullOutput": f"{r['highText']}\n\n{r['author']}: {r['title']}",
                     "myURL": myURL,

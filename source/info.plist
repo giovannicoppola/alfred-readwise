@@ -300,31 +300,6 @@ python3 readwise-rebuild.py
 		<dict>
 			<key>config</key>
 			<dict>
-				<key>concurrently</key>
-				<false/>
-				<key>escaping</key>
-				<integer>102</integer>
-				<key>script</key>
-				<string>export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
-export PYTHONPATH="$PWD/lib"
-python3 readwise_post.py "$1"</string>
-				<key>scriptargtype</key>
-				<integer>1</integer>
-				<key>scriptfile</key>
-				<string></string>
-				<key>type</key>
-				<integer>0</integer>
-			</dict>
-			<key>type</key>
-			<string>alfred.workflow.action.script</string>
-			<key>uid</key>
-			<string>8E887995-44A7-443C-B49C-E560F3057907</string>
-			<key>version</key>
-			<integer>2</integer>
-		</dict>
-		<dict>
-			<key>config</key>
-			<dict>
 				<key>acceptsfiles</key>
 				<false/>
 				<key>acceptsmulti</key>
@@ -363,6 +338,31 @@ python3 readwise_post.py "$1"</string>
 			<string>E6EBFFF6-0A4B-4F13-B835-7E60BE6999CB</string>
 			<key>version</key>
 			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>script</key>
+				<string>export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
+export PYTHONPATH="$PWD/lib"
+python3 readwise_post.py "$1"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>type</key>
+				<integer>0</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>8E887995-44A7-443C-B49C-E560F3057907</string>
+			<key>version</key>
+			<integer>2</integer>
 		</dict>
 		<dict>
 			<key>config</key>
@@ -1029,7 +1029,7 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 	<key>variablesdontexport</key>
 	<array/>
 	<key>version</key>
-	<string>0.2.1</string>
+	<string>0.3</string>
 	<key>webaddress</key>
 	<string>https://github.com/giovannicoppola/alfred-readwise</string>
 </dict>

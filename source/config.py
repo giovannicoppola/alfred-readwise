@@ -28,6 +28,7 @@ WF_BUNDLE = os.getenv('alfred_workflow_bundleid')
 DATA_FOLDER = os.getenv('alfred_workflow_data')
 MY_DATABASE = f"{DATA_FOLDER}/readwise.db"
 IMAGE_FOLDER = f"{DATA_FOLDER}/images/"
+IMAGE_H_FOLDER = f"{DATA_FOLDER}/images_H/"
 RefRate = int(os.getenv('RefreshRate'))
 
 if not os.path.exists(DATA_FOLDER):
@@ -35,3 +36,6 @@ if not os.path.exists(DATA_FOLDER):
 
 if not os.path.exists(IMAGE_FOLDER):
     os.makedirs(IMAGE_FOLDER)
+
+if not os.path.exists(IMAGE_H_FOLDER):
+    os.makedirs(IMAGE_H_FOLDER)

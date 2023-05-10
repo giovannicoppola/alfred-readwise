@@ -15,7 +15,78 @@ import os
 import shutil
 import requests
 import urllib.request
-from config import MY_DATABASE, TOKEN, log, IMAGE_FOLDER
+from config import MY_DATABASE, TOKEN, log, IMAGE_FOLDER, IMAGE_H_FOLDER
+from PIL import Image, ImageDraw, ImageFont
+import textwrap
+
+def createImage(highText,highAuthor,highTitle,highID):
+	# Compile the string to be shown
+	toShow = f"{highText}\n\n{highAuthor}: {highTitle}"
+	
+	image_width = 1200
+	image_height = 800
+	dpi = 96
+
+	# Set the font size and maximum width for text wrapping
+	font_size = 30
+	max_width = 1000
+
+	# Set the padding value (in pixels)
+	padding = 20
+
+	# Set the background color
+	background_color = (255, 255, 255)
+
+	# Set the font type
+	font_type = "Georgia.ttf"
+
+	# Set the line spacing (adjust as needed)
+	line_spacing = 20
+
+	# Set the border color
+	border_color = (128, 128, 128)
+	border_width = 5
+
+	# Create a new image with the specified background color
+	image = Image.new("RGB", (image_width, image_height), background_color)
+	draw = ImageDraw.Draw(image)
+
+	# Set the font and font size
+	font = ImageFont.truetype(font_type, font_size)
+
+	# Wrap the text to multiple lines, preserving newline characters
+	wrapped_text = ""
+	for line in toShow.splitlines():
+		wrapped_text += textwrap.fill(line, width=int(max_width / (font_size / 2))) + "\n"
+
+	# Calculate the total text height based on the number of lines and line spacing
+	line_height = font.getbbox("A")[3] - font.getbbox("A")[1]
+	text_height = len(wrapped_text.split('\n')) * line_height + (len(wrapped_text.split('\n')) - 1) * line_spacing
+
+	# Set the DPI for higher resolution
+	image.info["dpi"] = dpi
+
+	# Resize the image
+	image = image.resize((image_width, image_height), resample=Image.LANCZOS)
+
+	# Create a new draw object
+	draw = ImageDraw.Draw(image)
+
+	# Draw the wrapped text on the image
+	text_x = padding
+	text_y = padding
+	for line in wrapped_text.split('\n'):
+		draw.text((text_x, text_y), line, font=font, fill="black")
+		text_y += line_height + line_spacing
+
+	# Add a border to the image
+	draw.rectangle([(0, 0), (image_width - 1, image_height - 1)], outline=border_color, width=border_width)
+
+	# Save the image as a JPEG file with higher resolution
+	image.save(f"{IMAGE_H_FOLDER}{highID}.jpg", "JPEG", dpi=(dpi, dpi))
+
+
+
 
 
 def refreshReadwiseDatabase ():
@@ -90,6 +161,8 @@ def refreshReadwiseDatabase ():
 				myHigh['readwise_url']
 			
 			))
+
+			createImage(myHigh['text'],myBook['author'],myBook['title'],myHigh['id'])
 	
 	
 	
