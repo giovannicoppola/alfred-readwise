@@ -7,6 +7,8 @@ src="https://img.shields.io/github/downloads/giovannicoppola/alfred-readwise/tot
 
 ![](images/alfred-readwise.png)
 
+![](images/alfred-readwise.gif)
+
 <!-- MarkdownTOC autolink="true" bracket="round" depth="3" autoanchor="true" -->
 
 - [Motivation](#motivation)
@@ -62,6 +64,7 @@ src="https://img.shields.io/github/downloads/giovannicoppola/alfred-readwise/tot
 	- `command-enter` ⌘↩️ will open the source URL if available (typically for tweets)
 	- `ctrl-enter` ^↩️ will open the highlight on Readwise
 	- `shift-ctrl-enter` ⇧^↩️ will open all highlights from that book on Readwise
+	- `shift` alone: Quicklook of your highlight.
 
 
 ## Entering new highlights ⭐
