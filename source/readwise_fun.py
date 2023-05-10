@@ -162,7 +162,10 @@ def refreshReadwiseDatabase ():
 			
 			))
 
-			createImage(myHigh['text'],myBook['author'],myBook['title'],myHigh['id'])
+			
+			quickLookPath = f"{IMAGE_H_FOLDER}{myHigh['id']}.jpg"
+			if not os.path.exists(quickLookPath):
+				createImage(myHigh['text'],myBook['author'],myBook['title'],myHigh['id'])
 	
 	
 	
