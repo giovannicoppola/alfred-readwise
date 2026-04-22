@@ -53,6 +53,7 @@ func executeQuery(args []string) error {
 
 	// Prepare Alfred result
 	result := alfred.NewResult()
+	result.Variables["WF_TITLE"] = cfg.WfTitle
 
 	// Process query for tags
 	processedQuery, tagFilters := extractTags(query, tags)
