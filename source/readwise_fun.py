@@ -443,11 +443,13 @@ def refreshReaderDatabase():
 			location TEXT,
 			tags TEXT,
 			created_at TEXT,
-			updated_at TEXT
+			updated_at TEXT,
+			summary TEXT,
+			notes TEXT
 			)""")
 
 	for doc in full_data:
-		c.execute('INSERT OR REPLACE INTO reader_documents VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+		c.execute('INSERT OR REPLACE INTO reader_documents VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 			(doc.get('id', ''),
 			 doc.get('title', ''),
 			 doc.get('author', ''),
@@ -461,6 +463,8 @@ def refreshReaderDatabase():
 			 json.dumps(doc.get('tags', {})),
 			 doc.get('created_at', ''),
 			 doc.get('updated_at', ''),
+			 doc.get('summary', ''),
+			 doc.get('notes', ''),
 			))
 
 	db.commit()

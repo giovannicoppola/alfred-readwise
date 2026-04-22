@@ -236,12 +236,19 @@ def queryItems(database, myInput):
                 openURL = r['source_url'] or r['url'] or ''
                 urlText = "open in browser" if openURL else "no URL"
 
+                fullParts = [r['title']]
+                if r['summary']:
+                    fullParts.append(r['summary'])
+                if r['notes']:
+                    fullParts.append(f"Notes: {r['notes']}")
+                fullOutput = "\n\n".join(fullParts)
+
                 result["items"].append({
                     "title": r['title'],
                     'subtitle': subtitle,
                     'valid': True,
                     'variables': {
-                        "fullOutput": r['title'],
+                        "fullOutput": fullOutput,
                         "myURL": r['url'] or '',
                         "myStatus": 'completed',
                     },
