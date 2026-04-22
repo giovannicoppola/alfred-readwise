@@ -68,9 +68,21 @@ def queryItems(database, myInput):
     types = [k for k, v in my_checks.items() if v == '1']
     myTypes = ','.join('?'*len(types))
 
+    search_readwise = SEARCH_READWISE
+    search_reader = SEARCH_READER
+    if '--reader' in myInput:
+        search_readwise = False
+        search_reader = True
+        myInput = myInput.replace('--reader', '').strip()
+    elif '--readwise' in myInput:
+        search_readwise = True
+        search_reader = False
+        myInput = myInput.replace('--readwise', '').strip()
+    log(f"Inline filter: search_readwise={search_readwise}, search_reader={search_reader}")
+
     # getting list of tags from the database (only relevant for Readwise highlights)
     tagList = []
-    if SEARCH_READWISE:
+    if search_readwise:
         try:
             tag_statement = "SELECT name FROM tags"
             tag_rows = db.execute(tag_statement).fetchall()
@@ -95,7 +107,7 @@ def queryItems(database, myInput):
 
 
     # check if the user is trying to enter a tag (only for Readwise mode)
-    MYMATCH = re.search(r'(?:^| )#[^ ]*$', myInput) if SEARCH_READWISE else None
+    MYMATCH = re.search(r'(?:^| )#[^ ]*$', myInput) if search_readwise else None
     if (MYMATCH !=None):
 
         MYFLAG = MYMATCH.group(0).lstrip(' ')
@@ -131,7 +143,7 @@ def queryItems(database, myInput):
         totalResults = 0
 
         # Search Readwise highlights
-        if SEARCH_READWISE:
+        if search_readwise:
             if SEARCH_SCOPE == "All":
                 rw_columns = ["highText", "title", "author"]
             else:
@@ -195,7 +207,7 @@ def queryItems(database, myInput):
                         })
 
         # Search Reader documents
-        if SEARCH_READER:
+        if search_reader:
             if SEARCH_SCOPE == "All":
                 reader_columns = ["title", "author", "site_name"]
             else:

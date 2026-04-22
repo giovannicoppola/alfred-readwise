@@ -114,7 +114,7 @@
 		<array>
 			<dict>
 				<key>destinationuid</key>
-				<string>AC8986DF-8CE6-476F-AEC6-60DD01FC0DC1</string>
+				<string>F4F8B71F-C0EB-4675-9CAF-424BBAE41A4E</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -124,7 +124,20 @@
 			</dict>
 			<dict>
 				<key>destinationuid</key>
-				<string>F4F8B71F-C0EB-4675-9CAF-424BBAE41A4E</string>
+				<string>D7A1F3E2-94B6-4C08-A5D9-3E7F12AB56CD</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>D7A1F3E2-94B6-4C08-A5D9-3E7F12AB56CD</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>B3184E8D-E901-4771-843D-546BF7633DA4</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -250,7 +263,7 @@
 				<key>queuemode</key>
 				<integer>1</integer>
 				<key>runningsubtext</key>
-				<string>please wait while I refresh... ⏳</string>
+				<string>please wait while I rebuild... ⏳</string>
 				<key>script</key>
 				<string>export PYTHONPATH="$PWD/lib"
 /usr/bin/python3 readwise-rebuild.py
@@ -262,7 +275,7 @@
 				<key>subtext</key>
 				<string></string>
 				<key>title</key>
-				<string>refresh Readwise database 👀</string>
+				<string>rebuild Readwise database 👀</string>
 				<key>type</key>
 				<integer>0</integer>
 				<key>withspace</key>
@@ -388,7 +401,7 @@
 				<key>queuemode</key>
 				<integer>1</integer>
 				<key>runningsubtext</key>
-				<string>please wait while I refresh the database... ⏳</string>
+				<string>please wait while I rebuild the database... ⏳</string>
 				<key>script</key>
 				<string>export PYTHONPATH="$PWD/lib"
 /usr/bin/python3 readwise-query.py "$1"
@@ -477,6 +490,14 @@
 			<integer>2</integer>
 		</dict>
 		<dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.junction</string>
+			<key>uid</key>
+			<string>6C9CF47B-DCA0-44AD-904D-E030DB556EBA</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
 			<key>config</key>
 			<dict>
 				<key>autopaste</key>
@@ -494,14 +515,6 @@
 			<string>F4F8B71F-C0EB-4675-9CAF-424BBAE41A4E</string>
 			<key>version</key>
 			<integer>3</integer>
-		</dict>
-		<dict>
-			<key>type</key>
-			<string>alfred.workflow.utility.junction</string>
-			<key>uid</key>
-			<string>6C9CF47B-DCA0-44AD-904D-E030DB556EBA</string>
-			<key>version</key>
-			<integer>1</integer>
 		</dict>
 		<dict>
 			<key>config</key>
@@ -551,6 +564,39 @@
 			<string>alfred.workflow.output.callexternaltrigger</string>
 			<key>uid</key>
 			<string>E738C0BD-F1EA-48D3-AEDB-81E988E43700</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>behaviour</key>
+				<integer>2</integer>
+				<key>fontmode</key>
+				<integer>0</integer>
+				<key>fontsizing</key>
+				<integer>0</integer>
+				<key>footertext</key>
+				<string></string>
+				<key>inputfile</key>
+				<string></string>
+				<key>inputtype</key>
+				<integer>0</integer>
+				<key>loadingtext</key>
+				<string></string>
+				<key>outputmode</key>
+				<integer>0</integer>
+				<key>scriptinput</key>
+				<integer>0</integer>
+				<key>spellchecking</key>
+				<integer>0</integer>
+				<key>stackview</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.userinterface.text</string>
+			<key>uid</key>
+			<string>B3184E8D-E901-4771-843D-546BF7633DA4</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
@@ -607,6 +653,23 @@
 			<string>alfred.workflow.utility.junction</string>
 			<key>uid</key>
 			<string>56834D1D-55F4-4D51-B8E7-A128C0049C6B</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argument</key>
+				<string>{var:fullOutput}</string>
+				<key>passthroughargument</key>
+				<false/>
+				<key>variables</key>
+				<dict/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.argument</string>
+			<key>uid</key>
+			<string>D7A1F3E2-94B6-4C08-A5D9-3E7F12AB56CD</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
@@ -725,9 +788,9 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 		<key>6C9CF47B-DCA0-44AD-904D-E030DB556EBA</key>
 		<dict>
 			<key>xpos</key>
-			<real>550</real>
+			<real>595</real>
 			<key>ypos</key>
-			<real>470</real>
+			<real>425</real>
 		</dict>
 		<key>87446133-7FDD-4169-BD42-4A428AEC2F39</key>
 		<dict>
@@ -748,9 +811,23 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 		<key>AC8986DF-8CE6-476F-AEC6-60DD01FC0DC1</key>
 		<dict>
 			<key>xpos</key>
-			<real>640</real>
+			<real>690</real>
 			<key>ypos</key>
 			<real>340</real>
+		</dict>
+		<key>B3184E8D-E901-4771-843D-546BF7633DA4</key>
+		<dict>
+			<key>xpos</key>
+			<real>965</real>
+			<key>ypos</key>
+			<real>700</real>
+		</dict>
+		<key>D7A1F3E2-94B6-4C08-A5D9-3E7F12AB56CD</key>
+		<dict>
+			<key>xpos</key>
+			<real>780</real>
+			<key>ypos</key>
+			<real>560</real>
 		</dict>
 		<key>DE712F62-FBAB-42A3-9DDA-CAAA2EA1F6DC</key>
 		<dict>
@@ -783,7 +860,7 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 		<key>F4F8B71F-C0EB-4675-9CAF-424BBAE41A4E</key>
 		<dict>
 			<key>xpos</key>
-			<real>640</real>
+			<real>690</real>
 			<key>ypos</key>
 			<real>455</real>
 		</dict>
@@ -994,25 +1071,21 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 			<key>config</key>
 			<dict>
 				<key>default</key>
-				<string>Both</string>
+				<string>Main</string>
 				<key>pairs</key>
 				<array>
 					<array>
-						<string>Highlight</string>
-						<string>Text</string>
+						<string>Main</string>
+						<string>Main</string>
 					</array>
 					<array>
-						<string>Book title</string>
-						<string>Book</string>
-					</array>
-					<array>
-						<string>Both</string>
-						<string>Both</string>
+						<string>Include metadata</string>
+						<string>All</string>
 					</array>
 				</array>
 			</dict>
 			<key>description</key>
-			<string>Search across highlight text, book title, or both.</string>
+			<string>Search across main text (highlight or article title), or including metadata.</string>
 			<key>label</key>
 			<string>Search Scope</string>
 			<key>type</key>

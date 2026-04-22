@@ -58,6 +58,7 @@ src="https://img.shields.io/github/downloads/giovannicoppola/alfred-readwise/tot
 - launch with keyword (default: `!r`), or custom hotkey
 - standard search will be through highlight text and book titles. Multiple word (fragments) supported
 - typing `#` will prompt a label search which can be added to the standard search, multiple labels supported
+- type `--reader` or `--readwise` to restrict results to that platform for the current query
 	- `enter` ↩️ will show the highlight in large font and copy to clipboard
 	- `shift-enter` ⇧↩️ will show the highlight in large font and copy to clipboard without closing Alfred
 	- `command-enter` ⌘↩️ will open the source URL if available (typically for tweets)
@@ -99,6 +100,11 @@ src="https://img.shields.io/github/downloads/giovannicoppola/alfred-readwise/tot
 ### New in version 0.4
 - Highlights created via Alfred are now immediately saved to the local database, so they appear in search results without requiring a full database refresh
 - New `SEARCH_PLATFORM` setting: choose to search **Readwise** (default), **Reader**, or **Both**. Reader results show document titles; `ctrl-enter` opens the URL in your browser
+- Inline search filters: type `--reader` or `--readwise` anywhere in your query to restrict results to that platform, regardless of the `SEARCH_PLATFORM` setting
+- New `SEARCH_SCOPE` setting: `Main` (default) searches primary content only (highlight text for Readwise, document title for Reader); `All` includes metadata (author, book title, site name)
+- Reader results now include summary and notes in the text view output
+- Improved QuickLook highlight previews with better typography and layout
+- API error handling with rate-limit retry and timeouts
 
 - 04-04-2023: version 0.1
 
