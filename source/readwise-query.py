@@ -139,15 +139,15 @@ def queryItems(database, myInput):
 
             keywords = mySearchInput.split()
             if keywords:
-                col_clauses = []
-                for col in rw_columns:
-                    kw_conditions = [f"({col} LIKE '%{kw}%')" for kw in keywords]
-                    col_clauses.append(f"({' AND '.join(kw_conditions)})")
-                conditions_str = " OR ".join(col_clauses)
+                kw_clauses = []
+                for kw in keywords:
+                    col_matches = [f"{col} LIKE '%{kw}%'" for col in rw_columns]
+                    kw_clauses.append(f"({' OR '.join(col_matches)})")
+                conditions_str = " AND ".join(kw_clauses)
             else:
                 conditions_str = "1=1"
 
-            sql = f"SELECT * FROM highlights WHERE {conditions_str} and category IN ({myTypes}) {tag_sql}"
+            sql = f"SELECT * FROM highlights WHERE ({conditions_str}) and category IN ({myTypes}) {tag_sql}"
             log (sql)
 
             rs = db.execute(sql, types).fetchall()
@@ -203,11 +203,11 @@ def queryItems(database, myInput):
 
             keywords = mySearchInput.split()
             if keywords:
-                col_clauses = []
-                for col in reader_columns:
-                    kw_conditions = [f"({col} LIKE '%{kw}%')" for kw in keywords]
-                    col_clauses.append(f"({' AND '.join(kw_conditions)})")
-                reader_conditions = " OR ".join(col_clauses)
+                kw_clauses = []
+                for kw in keywords:
+                    col_matches = [f"{col} LIKE '%{kw}%'" for col in reader_columns]
+                    kw_clauses.append(f"({' OR '.join(col_matches)})")
+                reader_conditions = " AND ".join(kw_clauses)
             else:
                 reader_conditions = "1=1"
 
