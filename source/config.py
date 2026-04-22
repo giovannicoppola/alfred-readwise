@@ -22,7 +22,7 @@ PODCASTS_CHECK = os.getenv('PODCASTS_CHECK')
 SUPPLEMENTALS_CHECK = os.getenv('SUPPLEMENTALS_CHECK')
 NEW_HIGH_TITLE = os.getenv('NEW_HIGH_TITLE')
 SEARCH_SCOPE = os.getenv('SEARCH_SCOPE')
-
+SEARCH_PLATFORM = os.getenv('SEARCH_PLATFORM', 'Readwise highlights')
 
 WF_BUNDLE = os.getenv('alfred_workflow_bundleid')
 DATA_FOLDER = os.getenv('alfred_workflow_data')

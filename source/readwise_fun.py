@@ -15,7 +15,7 @@ import os
 import shutil
 import requests
 import urllib.request
-from config import MY_DATABASE, TOKEN, log, IMAGE_FOLDER, IMAGE_H_FOLDER
+from config import MY_DATABASE, TOKEN, log, IMAGE_FOLDER, IMAGE_H_FOLDER, SEARCH_PLATFORM
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
 
@@ -241,6 +241,66 @@ def makeLabelList():
 	db.close()
             		
 					
+
+def refreshReaderDatabase():
+	full_data = []
+	next_page_cursor = None
+	while True:
+		params = {}
+		if next_page_cursor:
+			params['pageCursor'] = next_page_cursor
+		log("Making Reader API request with params " + str(params) + "...")
+
+		response = requests.get(
+			url="https://readwise.io/api/v3/list/",
+			params=params,
+			headers={"Authorization": f"Token {TOKEN}"}, verify=False
+		)
+		full_data.extend(response.json()['results'])
+		next_page_cursor = response.json().get('nextPageCursor')
+		if not next_page_cursor:
+			break
+
+	db = sqlite3.connect(MY_DATABASE)
+	c = db.cursor()
+	c.execute("DROP TABLE IF EXISTS reader_documents")
+	c.execute("""CREATE TABLE reader_documents (
+			id TEXT PRIMARY KEY,
+			title TEXT,
+			author TEXT,
+			category TEXT,
+			source TEXT,
+			url TEXT,
+			source_url TEXT,
+			site_name TEXT,
+			image_url TEXT,
+			location TEXT,
+			tags TEXT,
+			created_at TEXT,
+			updated_at TEXT
+			)""")
+
+	for doc in full_data:
+		c.execute('INSERT OR REPLACE INTO reader_documents VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+			(doc.get('id', ''),
+			 doc.get('title', ''),
+			 doc.get('author', ''),
+			 doc.get('category', ''),
+			 doc.get('source', ''),
+			 doc.get('url', ''),
+			 doc.get('source_url', ''),
+			 doc.get('site_name', ''),
+			 doc.get('image_url', ''),
+			 doc.get('location', ''),
+			 json.dumps(doc.get('tags', {})),
+			 doc.get('created_at', ''),
+			 doc.get('updated_at', ''),
+			))
+
+	db.commit()
+	db.close()
+	log(f"Reader database refreshed with {len(full_data)} documents")
+
 
 """
 OBSOLETE FUNCTIONS
