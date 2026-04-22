@@ -39,14 +39,14 @@ def checkingTime ():
         log ("Database missing ... building")
         refreshAll()
     else:
-        # Check if reader_documents table needs to be created
+        # Check if reader_documents table needs to be created or updated
         if SEARCH_READER:
             try:
                 db = sqlite3.connect(MY_DATABASE)
-                db.execute("SELECT 1 FROM reader_documents LIMIT 1")
+                db.execute("SELECT summary FROM reader_documents LIMIT 1")
                 db.close()
             except Exception:
-                log("Reader table missing ... building")
+                log("Reader table missing or outdated ... rebuilding")
                 refreshReaderDatabase()
 
         databaseTime= (int(os.path.getmtime(MY_DATABASE)))
@@ -237,10 +237,13 @@ def queryItems(database, myInput):
                 urlText = "open in browser" if openURL else "no URL"
 
                 fullParts = [r['title']]
-                if r['summary']:
-                    fullParts.append(r['summary'])
-                if r['notes']:
-                    fullParts.append(f"Notes: {r['notes']}")
+                try:
+                    if r['summary']:
+                        fullParts.append(r['summary'])
+                    if r['notes']:
+                        fullParts.append(f"Notes: {r['notes']}")
+                except (IndexError, KeyError):
+                    pass
                 fullOutput = "\n\n".join(fullParts)
 
                 result["items"].append({
