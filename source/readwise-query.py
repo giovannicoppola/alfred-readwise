@@ -236,7 +236,7 @@ def queryItems(database, myInput):
                 openURL = r['source_url'] or r['url'] or ''
                 urlText = "open in browser" if openURL else "no URL"
 
-                fullParts = [r['title']]
+                fullParts = [r['title'] or '(no title)']
                 try:
                     if r['summary']:
                         fullParts.append(r['summary'])
@@ -247,7 +247,7 @@ def queryItems(database, myInput):
                 fullOutput = "\n\n".join(fullParts)
 
                 result["items"].append({
-                    "title": r['title'],
+                    "title": r['title'] or '(no title)',
                     'subtitle': subtitle,
                     'valid': True,
                     'variables': {
