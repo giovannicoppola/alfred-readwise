@@ -11,7 +11,7 @@ import sys
 def log(s, *args):
     if args:
         s = s % args
-    print(s, file=sys.stderr)
+    print(s, file=sys.stderr, flush=True)
 
 
 TOKEN = os.getenv('READWISE_TOKEN')
