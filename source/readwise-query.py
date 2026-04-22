@@ -20,8 +20,10 @@ my_checks = {'books': BOOKS_CHECK, 'articles': ARTICLES_CHECK, 'tweets': TWEETS_
 
 
 
+log(f"SEARCH_PLATFORM = '{SEARCH_PLATFORM}'")
 SEARCH_READWISE = SEARCH_PLATFORM in ("Readwise highlights", "Readwise")
 SEARCH_READER = SEARCH_PLATFORM in ("Readwise Reader", "Readwise")
+log(f"SEARCH_READWISE = {SEARCH_READWISE}, SEARCH_READER = {SEARCH_READER}")
 
 def refreshAll():
     if SEARCH_READWISE:
@@ -37,6 +39,16 @@ def checkingTime ():
         log ("Database missing ... building")
         refreshAll()
     else:
+        # Check if reader_documents table needs to be created
+        if SEARCH_READER:
+            try:
+                db = sqlite3.connect(MY_DATABASE)
+                db.execute("SELECT 1 FROM reader_documents LIMIT 1")
+                db.close()
+            except Exception:
+                log("Reader table missing ... building")
+                refreshReaderDatabase()
+
         databaseTime= (int(os.path.getmtime(MY_DATABASE)))
         dt_obj = datetime.fromtimestamp(databaseTime).date()
         time_elapsed = (timeToday-dt_obj).days
@@ -56,11 +68,15 @@ def queryItems(database, myInput):
     types = [k for k, v in my_checks.items() if v == '1']
     myTypes = ','.join('?'*len(types))
 
-    # getting list of tags from the database
-    tag_statement = "SELECT name FROM tags"
-    tag_rows = db.execute(tag_statement).fetchall()
-    tagList = [row[0] for row in tag_rows]
-    tagList = ['#' + s for s in tagList]
+    # getting list of tags from the database (only relevant for Readwise highlights)
+    tagList = []
+    if SEARCH_READWISE:
+        try:
+            tag_statement = "SELECT name FROM tags"
+            tag_rows = db.execute(tag_statement).fetchall()
+            tagList = ['#' + row[0] for row in tag_rows]
+        except Exception as e:
+            log(f"Tags query failed: {e}")
 
     #initializing JSON output
     result = {"items": [], "variables":{}}
@@ -69,25 +85,25 @@ def queryItems(database, myInput):
     # extracting any full tags from current input, adding them to the sql query
     fullTags = re.findall('#[^ ]+ ', myInput)
     fullTags = [s.strip() for s in fullTags]
-    
+
     tag_sql = ""
     for currTag  in fullTags:
         if currTag.strip() in tagList: #if it is a real tag
             mySearchInput = re.sub(currTag, '', mySearchInput).strip()
             currTag = currTag[1:].strip()
             tag_sql = f"{tag_sql} AND highTags LIKE '%{currTag}%'"
-        
 
-    # check if the user is trying to enter a tag
-    MYMATCH = re.search(r'(?:^| )#[^ ]*$', myInput)
+
+    # check if the user is trying to enter a tag (only for Readwise mode)
+    MYMATCH = re.search(r'(?:^| )#[^ ]*$', myInput) if SEARCH_READWISE else None
     if (MYMATCH !=None):
-        
+
         MYFLAG = MYMATCH.group(0).lstrip(' ')
         mySearchInput = re.sub(MYFLAG,'',myInput)
         myInput = re.sub(MYFLAG,'',myInput)
-        
+
         mySubset = [i for i in tagList if MYFLAG in i]
-        
+
         # adding a complete tag if the user selects it from the list
         if mySubset:
             for thislabel in mySubset:
@@ -108,8 +124,8 @@ def queryItems(database, myInput):
                     "path": f"icons/Warning.png"
                 }
             })
-            
-    
+
+
     else:
 
         totalResults = 0
