@@ -90,21 +90,44 @@ def createImage(highText,highAuthor,highTitle,highID):
 
 
 def refreshReadwiseDatabase ():
+	import time as _time
 	full_data = []
 	next_page_cursor = None
+	page = 0
 	while True:
+		page += 1
 		params = {}
 		if next_page_cursor:
 			params['pageCursor'] = next_page_cursor
-		log ("Making export api request with params " + str(params) + "...")
-		
-		response = requests.get(
-			url="https://readwise.io/api/v2/export/",
-			params=params,
-			headers={"Authorization": f"Token {TOKEN}"}, verify=False
-		)
-		full_data.extend(response.json()['results'])
-		next_page_cursor = response.json().get('nextPageCursor')
+		log(f"Readwise API: fetching page {page}...")
+
+		try:
+			response = requests.get(
+				url="https://readwise.io/api/v2/export/",
+				params=params,
+				headers={"Authorization": f"Token {TOKEN}"}, verify=False,
+				timeout=30
+			)
+		except requests.exceptions.RequestException as e:
+			log(f"Readwise API: request failed: {e}")
+			break
+
+		if response.status_code == 429:
+			retry_after = int(response.headers.get('Retry-After', 60))
+			log(f"Readwise API: rate limited, waiting {retry_after}s...")
+			_time.sleep(retry_after)
+			continue
+
+		if response.status_code != 200:
+			log(f"Readwise API: error {response.status_code}: {response.text[:200]}")
+			break
+
+		data = response.json()
+		results = data.get('results', [])
+		full_data.extend(results)
+		log(f"Readwise API: got {len(results)} books (total: {len(full_data)})")
+
+		next_page_cursor = data.get('nextPageCursor')
 		if not next_page_cursor:
 			break
 	
