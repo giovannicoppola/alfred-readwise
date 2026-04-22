@@ -204,6 +204,106 @@ func (c *Client) CreateHighlight(text, title string) ([]HighlightCreateResponse,
 	return created, nil
 }
 
+// ReaderDocument represents a document from the Readwise Reader API (v3)
+type ReaderDocument struct {
+	ID        string                 `json:"id"`
+	Title     string                 `json:"title"`
+	Author    string                 `json:"author"`
+	Category  string                 `json:"category"`
+	Source    string                 `json:"source"`
+	URL       string                 `json:"url"`
+	SourceURL string                 `json:"source_url"`
+	SiteName  string                 `json:"site_name"`
+	ImageURL  string                 `json:"image_url"`
+	Location  string                 `json:"location"`
+	Tags      map[string]interface{} `json:"tags"`
+	CreatedAt string                 `json:"created_at"`
+	UpdatedAt string                 `json:"updated_at"`
+}
+
+// ReaderListResponse represents the response from the Reader list API
+type ReaderListResponse struct {
+	Count          int              `json:"count"`
+	NextPageCursor *string          `json:"nextPageCursor"`
+	Results        []ReaderDocument `json:"results"`
+}
+
+// FetchReaderDocuments fetches all documents from Readwise Reader
+func (c *Client) FetchReaderDocuments() ([]ReaderDocument, error) {
+	var allDocs []ReaderDocument
+	var nextPageCursor *string
+
+	for {
+		url := "https://readwise.io/api/v3/list/"
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create request: %w", err)
+		}
+
+		req.Header.Set("Authorization", "Token "+c.token)
+
+		if nextPageCursor != nil {
+			q := req.URL.Query()
+			q.Add("pageCursor", *nextPageCursor)
+			req.URL.RawQuery = q.Encode()
+		}
+
+		config.Log("[DEBUG FetchReaderDocuments] fetching page (cursor: %v)...", nextPageCursor)
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make request: %w", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			return nil, fmt.Errorf("Reader API request failed with status %d: %s", resp.StatusCode, string(body))
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
+
+		var listResp ReaderListResponse
+		if err := json.Unmarshal(body, &listResp); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+		}
+
+		allDocs = append(allDocs, listResp.Results...)
+		config.Log("[DEBUG FetchReaderDocuments] fetched %d documents (total: %d)", len(listResp.Results), len(allDocs))
+
+		nextPageCursor = listResp.NextPageCursor
+		if nextPageCursor == nil {
+			break
+		}
+	}
+
+	return allDocs, nil
+}
+
+// ConvertToDBReaderDocument converts an API Reader document to a database ReaderDocument
+func ConvertToDBReaderDocument(doc ReaderDocument) *database.ReaderDocument {
+	tagsJSON, _ := json.Marshal(doc.Tags)
+
+	return &database.ReaderDocument{
+		ID:        doc.ID,
+		Title:     doc.Title,
+		Author:    doc.Author,
+		Category:  doc.Category,
+		Source:    doc.Source,
+		URL:       doc.URL,
+		SourceURL: doc.SourceURL,
+		SiteName:  doc.SiteName,
+		ImageURL:  doc.ImageURL,
+		Location:  doc.Location,
+		Tags:      string(tagsJSON),
+		CreatedAt: doc.CreatedAt,
+		UpdatedAt: doc.UpdatedAt,
+	}
+}
+
 // ConvertToDBHighlight converts API data to database highlight
 func ConvertToDBHighlight(book Book, highlight HighlightExport) *database.Highlight {
 	// Convert tags to JSON string

@@ -17,6 +17,7 @@ type Config struct {
 	SupplementalsCheck string
 	NewHighTitle       string
 	SearchScope        string
+	SearchPlatform     string
 	WfBundle           string
 	DataFolder         string
 	Database           string
@@ -65,6 +66,7 @@ func NewConfig() (*Config, error) {
 		SupplementalsCheck: getEnvWithDefault("SUPPLEMENTALS_CHECK", "1"),
 		NewHighTitle:       getEnvWithDefault("NEW_HIGH_TITLE", "From Alfred"),
 		SearchScope:        getEnvWithDefault("SEARCH_SCOPE", "Both"),
+		SearchPlatform:     getEnvWithDefault("SEARCH_PLATFORM", "Readwise"),
 		WfBundle:           os.Getenv("alfred_workflow_bundleid"),
 		DataFolder:         dataFolder,
 		Database:           database,

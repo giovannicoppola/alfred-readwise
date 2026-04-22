@@ -99,6 +99,7 @@ src="https://img.shields.io/github/downloads/giovannicoppola/alfred-readwise/tot
 
 ### New in version 0.4
 - Highlights created via Alfred are now immediately saved to the local database, so they appear in search results without requiring a full database refresh
+- New `SEARCH_PLATFORM` setting: choose to search **Readwise** (default), **Reader**, or **Both**. Reader results show document titles; `ctrl-enter` opens the URL in your browser
 
 - 04-04-2023: version 0.1
 

@@ -32,6 +32,23 @@ type Highlight struct {
 	HighReadwiseURL string `json:"high_readwise_url"`
 }
 
+// ReaderDocument represents a document from Readwise Reader
+type ReaderDocument struct {
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Author    string `json:"author"`
+	Category  string `json:"category"`
+	Source    string `json:"source"`
+	URL       string `json:"url"`
+	SourceURL string `json:"source_url"`
+	SiteName  string `json:"site_name"`
+	ImageURL  string `json:"image_url"`
+	Location  string `json:"location"`
+	Tags      string `json:"tags"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
 // Tag represents a tag in the database
 type Tag struct {
 	ID   int    `json:"id"`
@@ -93,12 +110,33 @@ func (d *Database) createTables() error {
 		name TEXT NOT NULL
 	)`
 
+	readerTable := `
+	CREATE TABLE IF NOT EXISTS reader_documents (
+		id TEXT PRIMARY KEY,
+		title TEXT,
+		author TEXT,
+		category TEXT,
+		source TEXT,
+		url TEXT,
+		source_url TEXT,
+		site_name TEXT,
+		image_url TEXT,
+		location TEXT,
+		tags TEXT,
+		created_at TEXT,
+		updated_at TEXT
+	)`
+
 	if _, err := d.db.Exec(highlightsTable); err != nil {
 		return fmt.Errorf("failed to create highlights table: %w", err)
 	}
 
 	if _, err := d.db.Exec(tagsTable); err != nil {
 		return fmt.Errorf("failed to create tags table: %w", err)
+	}
+
+	if _, err := d.db.Exec(readerTable); err != nil {
+		return fmt.Errorf("failed to create reader_documents table: %w", err)
 	}
 
 	return nil
@@ -299,6 +337,70 @@ func (d *Database) RebuildTags() error {
 	}
 
 	return nil
+}
+
+// ClearReaderDocuments drops and recreates the reader_documents table
+func (d *Database) ClearReaderDocuments() error {
+	if _, err := d.db.Exec("DROP TABLE IF EXISTS reader_documents"); err != nil {
+		return fmt.Errorf("failed to drop reader_documents table: %w", err)
+	}
+	return d.createTables()
+}
+
+// InsertReaderDocument inserts a Reader document into the database
+func (d *Database) InsertReaderDocument(doc *ReaderDocument) error {
+	query := `INSERT OR REPLACE INTO reader_documents VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err := d.db.Exec(query,
+		doc.ID, doc.Title, doc.Author, doc.Category, doc.Source,
+		doc.URL, doc.SourceURL, doc.SiteName, doc.ImageURL,
+		doc.Location, doc.Tags, doc.CreatedAt, doc.UpdatedAt,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to insert reader document: %w", err)
+	}
+	return nil
+}
+
+// SearchReaderDocuments searches for Reader documents by title
+func (d *Database) SearchReaderDocuments(query string) ([]ReaderDocument, error) {
+	var conditions []string
+	var args []interface{}
+
+	if query != "" {
+		keywords := strings.Fields(query)
+		for _, keyword := range keywords {
+			conditions = append(conditions, "title LIKE ?")
+			args = append(args, "%"+keyword+"%")
+		}
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	querySQL := "SELECT id, title, author, category, source, url, source_url, site_name, image_url, location, tags, created_at, updated_at FROM reader_documents " + whereClause + " ORDER BY updated_at DESC"
+	rows, err := d.db.Query(querySQL, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query reader documents: %w", err)
+	}
+	defer rows.Close()
+
+	var docs []ReaderDocument
+	for rows.Next() {
+		var doc ReaderDocument
+		err := rows.Scan(
+			&doc.ID, &doc.Title, &doc.Author, &doc.Category, &doc.Source,
+			&doc.URL, &doc.SourceURL, &doc.SiteName, &doc.ImageURL,
+			&doc.Location, &doc.Tags, &doc.CreatedAt, &doc.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan reader document: %w", err)
+		}
+		docs = append(docs, doc)
+	}
+
+	return docs, nil
 }
 
 // GetLastModified returns the last modification time of the database

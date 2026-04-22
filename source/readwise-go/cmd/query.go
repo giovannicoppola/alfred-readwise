@@ -63,78 +63,136 @@ func executeQuery(args []string) error {
 		return result.Print()
 	}
 
-	// Search highlights
-	highlights, err := db.SearchHighlights(processedQuery, cfg.GetEnabledTypes(), cfg.SearchScope, tagFilters)
-	if err != nil {
-		return fmt.Errorf("failed to search highlights: %w", err)
-	}
+	searchReadwise := cfg.SearchPlatform == "Readwise" || cfg.SearchPlatform == "Both"
+	searchReader := cfg.SearchPlatform == "Reader" || cfg.SearchPlatform == "Both"
 
-	// Add results to Alfred output
-	for i, highlight := range highlights {
-		if i >= 50 { // Limit results
-			break
+	totalResults := 0
+
+	// Search Readwise highlights
+	if searchReadwise {
+		highlights, err := db.SearchHighlights(processedQuery, cfg.GetEnabledTypes(), cfg.SearchScope, tagFilters)
+		if err != nil {
+			return fmt.Errorf("failed to search highlights: %w", err)
 		}
 
-		// Parse tags for display
-		var tagNames []string
-		if highlight.HighTags != "[]" && highlight.HighTags != "" {
-			var tags []map[string]interface{}
-			if err := json.Unmarshal([]byte(strings.ReplaceAll(highlight.HighTags, "'", "\"")), &tags); err == nil {
-				for _, tag := range tags {
-					if name, ok := tag["name"].(string); ok {
-						tagNames = append(tagNames, name)
+		for i, highlight := range highlights {
+			if totalResults >= 50 {
+				break
+			}
+
+			var tagNames []string
+			if highlight.HighTags != "[]" && highlight.HighTags != "" {
+				var htags []map[string]interface{}
+				if err := json.Unmarshal([]byte(strings.ReplaceAll(highlight.HighTags, "'", "\"")), &htags); err == nil {
+					for _, tag := range htags {
+						if name, ok := tag["name"].(string); ok {
+							tagNames = append(tagNames, name)
+						}
 					}
 				}
 			}
-		}
 
-		tagDisplay := ""
-		if len(tagNames) > 0 {
-			tagDisplay = "🏷️ " + strings.Join(tagNames, ",")
-		}
+			tagDisplay := ""
+			if len(tagNames) > 0 {
+				tagDisplay = "🏷️ " + strings.Join(tagNames, ",")
+			}
 
-		if highlight.HighIsFavorite == 1 {
-			tagDisplay += "❤️"
-		}
+			if highlight.HighIsFavorite == 1 {
+				tagDisplay += "❤️"
+			}
 
-		subtitle := fmt.Sprintf("%d/%d %s-%s %s", i+1, len(highlights), highlight.Title, highlight.Author, tagDisplay)
+			subtitle := fmt.Sprintf("%d/%d %s-%s %s", i+1, len(highlights), highlight.Title, highlight.Author, tagDisplay)
 
-		// Quick look path
-		quickLookPath := filepath.Join(cfg.ImageHFolder, fmt.Sprintf("%d.jpg", highlight.HighID))
+			quickLookPath := filepath.Join(cfg.ImageHFolder, fmt.Sprintf("%d.jpg", highlight.HighID))
 
-		sourceURLText := "no source URL"
-		if highlight.HighURL != "" {
-			sourceURLText = "open source URL"
-		}
+			sourceURLText := "no source URL"
+			if highlight.HighURL != "" {
+				sourceURLText = "open source URL"
+			}
 
-		item := alfred.Item{
-			Title:        highlight.HighText,
-			Subtitle:     subtitle,
-			Valid:        true,
-			QuickLookURL: quickLookPath,
-			Variables: map[string]string{
-				"fullOutput": fmt.Sprintf("%s\n\n%s: %s", highlight.HighText, highlight.Author, highlight.Title),
-				"myURL":      highlight.HighReadwiseURL,
-				"myStatus":   "completed",
-				"myURLall":   highlight.ReadwiseURL,
-			},
-			Mods: map[string]alfred.Mod{
-				"command": {
-					Valid:    true,
-					Subtitle: sourceURLText,
-					Arg:      highlight.HighURL,
+			item := alfred.Item{
+				Title:        highlight.HighText,
+				Subtitle:     subtitle,
+				Valid:        true,
+				QuickLookURL: quickLookPath,
+				Variables: map[string]string{
+					"fullOutput": fmt.Sprintf("%s\n\n%s: %s", highlight.HighText, highlight.Author, highlight.Title),
+					"myURL":      highlight.HighReadwiseURL,
+					"myStatus":   "completed",
+					"myURLall":   highlight.ReadwiseURL,
 				},
-			},
-			Icon: &alfred.Icon{
-				Path: filepath.Join(cfg.ImageFolder, fmt.Sprintf("%d.jpg", highlight.UserBookID)),
-			},
+				Mods: map[string]alfred.Mod{
+					"command": {
+						Valid:    true,
+						Subtitle: sourceURLText,
+						Arg:      highlight.HighURL,
+					},
+				},
+				Icon: &alfred.Icon{
+					Path: filepath.Join(cfg.ImageFolder, fmt.Sprintf("%d.jpg", highlight.UserBookID)),
+				},
+			}
+
+			result.AddItem(item)
+			totalResults++
+		}
+	}
+
+	// Search Reader documents
+	if searchReader {
+		readerDocs, err := db.SearchReaderDocuments(processedQuery)
+		if err != nil {
+			return fmt.Errorf("failed to search reader documents: %w", err)
 		}
 
-		result.AddItem(item)
+		for i, doc := range readerDocs {
+			if totalResults >= 50 {
+				break
+			}
+
+			subtitle := fmt.Sprintf("📖 Reader %d/%d", i+1, len(readerDocs))
+			if doc.Author != "" {
+				subtitle += " — " + doc.Author
+			}
+			if doc.Category != "" {
+				subtitle += " [" + doc.Category + "]"
+			}
+
+			openURL := doc.SourceURL
+			if openURL == "" {
+				openURL = doc.URL
+			}
+
+			urlText := "no URL"
+			if openURL != "" {
+				urlText = "open in browser"
+			}
+
+			item := alfred.Item{
+				Title:    doc.Title,
+				Subtitle: subtitle,
+				Valid:    true,
+				Variables: map[string]string{
+					"fullOutput": doc.Title,
+					"myURL":      doc.URL,
+					"myStatus":   "completed",
+				},
+				Mods: map[string]alfred.Mod{
+					"ctrl": {
+						Valid:    true,
+						Subtitle: urlText,
+						Arg:      openURL,
+					},
+				},
+			}
+
+			result.AddItem(item)
+			totalResults++
+		}
 	}
 
 	// Add no results message if needed
-	if len(highlights) == 0 && processedQuery != "" {
+	if totalResults == 0 && processedQuery != "" {
 		result.AddWarningItem("No matches in your library", "Try a different query")
 	}
 
@@ -231,12 +289,6 @@ func rebuildDatabase(cfg *config.Config) error {
 	// Create Readwise client
 	client := readwise.NewClient(cfg.Token)
 
-	// Fetch all data
-	books, err := client.ExportAll()
-	if err != nil {
-		return fmt.Errorf("failed to export from Readwise: %w", err)
-	}
-
 	// Open database
 	db, err := database.NewDatabase(cfg.Database)
 	if err != nil {
@@ -244,41 +296,68 @@ func rebuildDatabase(cfg *config.Config) error {
 	}
 	defer db.Close()
 
-	// Clear existing data
-	if err := db.ClearHighlights(); err != nil {
-		return fmt.Errorf("failed to clear highlights: %w", err)
-	}
+	searchReadwise := cfg.SearchPlatform == "Readwise" || cfg.SearchPlatform == "Both"
+	searchReader := cfg.SearchPlatform == "Reader" || cfg.SearchPlatform == "Both"
 
-	// Insert all highlights
-	for _, book := range books {
-		for _, highlight := range book.Highlights {
-			dbHighlight := readwise.ConvertToDBHighlight(book, highlight)
-			if err := db.InsertHighlight(dbHighlight); err != nil {
-				config.Log("Warning: failed to insert highlight %d: %v", highlight.ID, err)
-				continue
+	// Rebuild Readwise highlights
+	if searchReadwise {
+		books, err := client.ExportAll()
+		if err != nil {
+			return fmt.Errorf("failed to export from Readwise: %w", err)
+		}
+
+		if err := db.ClearHighlights(); err != nil {
+			return fmt.Errorf("failed to clear highlights: %w", err)
+		}
+
+		for _, book := range books {
+			for _, highlight := range book.Highlights {
+				dbHighlight := readwise.ConvertToDBHighlight(book, highlight)
+				if err := db.InsertHighlight(dbHighlight); err != nil {
+					config.Log("Warning: failed to insert highlight %d: %v", highlight.ID, err)
+					continue
+				}
+
+				imagePath := filepath.Join(cfg.ImageHFolder, fmt.Sprintf("%d.jpg", highlight.ID))
+				if _, err := os.Stat(imagePath); os.IsNotExist(err) {
+					if err := image.CreateHighlightImage(highlight.Text, book.Author, book.Title, highlight.ID, imagePath); err != nil {
+						config.Log("Warning: failed to create image for highlight %d: %v", highlight.ID, err)
+					}
+				}
 			}
 
-			// Create highlight image if it doesn't exist
-			imagePath := filepath.Join(cfg.ImageHFolder, fmt.Sprintf("%d.jpg", highlight.ID))
-			if _, err := os.Stat(imagePath); os.IsNotExist(err) {
-				if err := image.CreateHighlightImage(highlight.Text, book.Author, book.Title, highlight.ID, imagePath); err != nil {
-					config.Log("Warning: failed to create image for highlight %d: %v", highlight.ID, err)
+			coverPath := filepath.Join(cfg.ImageFolder, fmt.Sprintf("%d.jpg", book.UserBookID))
+			if _, err := os.Stat(coverPath); os.IsNotExist(err) {
+				if err := image.DownloadCoverImage(book.CoverImageURL, coverPath); err != nil {
+					config.Log("Warning: failed to download cover for book %d: %v", book.UserBookID, err)
 				}
 			}
 		}
 
-		// Download cover image if it doesn't exist
-		coverPath := filepath.Join(cfg.ImageFolder, fmt.Sprintf("%d.jpg", book.UserBookID))
-		if _, err := os.Stat(coverPath); os.IsNotExist(err) {
-			if err := image.DownloadCoverImage(book.CoverImageURL, coverPath); err != nil {
-				config.Log("Warning: failed to download cover for book %d: %v", book.UserBookID, err)
-			}
+		if err := db.RebuildTags(); err != nil {
+			config.Log("Warning: failed to rebuild tags: %v", err)
 		}
 	}
 
-	// Rebuild tags
-	if err := db.RebuildTags(); err != nil {
-		config.Log("Warning: failed to rebuild tags: %v", err)
+	// Rebuild Reader documents
+	if searchReader {
+		config.Log("Fetching Reader documents...")
+		docs, err := client.FetchReaderDocuments()
+		if err != nil {
+			return fmt.Errorf("failed to fetch Reader documents: %w", err)
+		}
+
+		if err := db.ClearReaderDocuments(); err != nil {
+			return fmt.Errorf("failed to clear reader documents: %w", err)
+		}
+
+		for _, doc := range docs {
+			dbDoc := readwise.ConvertToDBReaderDocument(doc)
+			if err := db.InsertReaderDocument(dbDoc); err != nil {
+				config.Log("Warning: failed to insert reader document %s: %v", doc.ID, err)
+			}
+		}
+		config.Log("Inserted %d Reader documents", len(docs))
 	}
 
 	config.Log("Database rebuild complete")
