@@ -53,8 +53,6 @@ func executeQuery(args []string) error {
 
 	// Prepare Alfred result
 	result := alfred.NewResult()
-	result.Variables["WF_TITLE"] = cfg.WfTitle
-
 	// Process query for tags
 	processedQuery, tagFilters := extractTags(query, tags)
 
@@ -64,8 +62,8 @@ func executeQuery(args []string) error {
 		return result.Print()
 	}
 
-	searchReadwise := cfg.SearchPlatform == "Readwise" || cfg.SearchPlatform == "Both"
-	searchReader := cfg.SearchPlatform == "Reader" || cfg.SearchPlatform == "Both"
+	searchReadwise := cfg.SearchPlatform == "Readwise highlights" || cfg.SearchPlatform == "Readwise"
+	searchReader := cfg.SearchPlatform == "Readwise Reader" || cfg.SearchPlatform == "Readwise"
 
 	totalResults := 0
 
@@ -297,8 +295,8 @@ func rebuildDatabase(cfg *config.Config) error {
 	}
 	defer db.Close()
 
-	searchReadwise := cfg.SearchPlatform == "Readwise" || cfg.SearchPlatform == "Both"
-	searchReader := cfg.SearchPlatform == "Reader" || cfg.SearchPlatform == "Both"
+	searchReadwise := cfg.SearchPlatform == "Readwise highlights" || cfg.SearchPlatform == "Readwise"
+	searchReader := cfg.SearchPlatform == "Readwise Reader" || cfg.SearchPlatform == "Readwise"
 
 	// Rebuild Readwise highlights
 	if searchReadwise {

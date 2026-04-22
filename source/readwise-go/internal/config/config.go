@@ -18,7 +18,6 @@ type Config struct {
 	NewHighTitle       string
 	SearchScope        string
 	SearchPlatform     string
-	WfTitle            string
 	WfBundle           string
 	DataFolder         string
 	Database           string
@@ -58,18 +57,6 @@ func NewConfig() (*Config, error) {
 		}
 	}
 
-	searchPlatform := getEnvWithDefault("SEARCH_PLATFORM", "Readwise")
-
-	var wfTitle string
-	switch searchPlatform {
-	case "Reader":
-		wfTitle = "Search your Readwise Reader library"
-	case "Both":
-		wfTitle = "Search Readwise"
-	default:
-		wfTitle = "Search your Readwise highlights"
-	}
-
 	return &Config{
 		Token:              os.Getenv("READWISE_TOKEN"),
 		ArticlesCheck:      getEnvWithDefault("ARTICLES_CHECK", "1"),
@@ -79,8 +66,7 @@ func NewConfig() (*Config, error) {
 		SupplementalsCheck: getEnvWithDefault("SUPPLEMENTALS_CHECK", "1"),
 		NewHighTitle:       getEnvWithDefault("NEW_HIGH_TITLE", "From Alfred"),
 		SearchScope:        getEnvWithDefault("SEARCH_SCOPE", "Both"),
-		SearchPlatform:     searchPlatform,
-		WfTitle:            wfTitle,
+		SearchPlatform:     getEnvWithDefault("SEARCH_PLATFORM", "Readwise highlights"),
 		WfBundle:           os.Getenv("alfred_workflow_bundleid"),
 		DataFolder:         dataFolder,
 		Database:           database,
