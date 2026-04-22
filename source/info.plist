@@ -5,7 +5,7 @@
 	<key>bundleid</key>
 	<string>alfred-readwise</string>
 	<key>category</key>
-	<string>myWorkflows</string>
+	<string>WIP</string>
 	<key>connections</key>
 	<dict>
 		<key>33E46D89-2530-4074-AC50-0C96FDA808EC</key>
@@ -252,9 +252,8 @@
 				<key>runningsubtext</key>
 				<string>please wait while I refresh... ⏳</string>
 				<key>script</key>
-				<string>export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
-export PYTHONPATH="$PWD/lib"
-python3 readwise-rebuild.py
+				<string>export PYTHONPATH="$PWD/lib"
+/usr/bin/python3 readwise-rebuild.py
 </string>
 				<key>scriptargtype</key>
 				<integer>1</integer>
@@ -347,9 +346,8 @@ python3 readwise-rebuild.py
 				<key>escaping</key>
 				<integer>102</integer>
 				<key>script</key>
-				<string>export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
-export PYTHONPATH="$PWD/lib"
-python3 readwise_post.py "$1"</string>
+				<string>export PYTHONPATH="$PWD/lib"
+/usr/bin/python3 readwise_post.py "$1"</string>
 				<key>scriptargtype</key>
 				<integer>1</integer>
 				<key>scriptfile</key>
@@ -392,9 +390,8 @@ python3 readwise_post.py "$1"</string>
 				<key>runningsubtext</key>
 				<string>please wait while I refresh the database... ⏳</string>
 				<key>script</key>
-				<string>export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
-export PYTHONPATH="$PWD/lib"
-python3 readwise-query.py "$1"
+				<string>export PYTHONPATH="$PWD/lib"
+/usr/bin/python3 readwise-query.py "$1"
 </string>
 				<key>scriptargtype</key>
 				<integer>1</integer>
@@ -403,7 +400,7 @@ python3 readwise-query.py "$1"
 				<key>subtext</key>
 				<string></string>
 				<key>title</key>
-				<string>Search your {var:SEARCH_PLATFORM}</string>
+				<string>Search your {var:SEARCH_PLATFORM} library</string>
 				<key>type</key>
 				<integer>5</integer>
 				<key>withspace</key>
@@ -462,11 +459,9 @@ python3 readwise-query.py "$1"
 				<key>focusedappvariablename</key>
 				<string></string>
 				<key>hotkey</key>
-				<integer>15</integer>
+				<integer>0</integer>
 				<key>hotmod</key>
-				<integer>1835008</integer>
-				<key>hotstring</key>
-				<string>R</string>
+				<integer>0</integer>
 				<key>leftcursor</key>
 				<false/>
 				<key>modsmode</key>
@@ -1025,11 +1020,39 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 			<key>variable</key>
 			<string>SEARCH_SCOPE</string>
 		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string>Readwise highlights</string>
+				<key>pairs</key>
+				<array>
+					<array>
+						<string>Readwise</string>
+						<string>Readwise highlights</string>
+					</array>
+					<array>
+						<string>Reader</string>
+						<string>Readwise Reader</string>
+					</array>
+					<array>
+						<string>Readwise and Readwise Reader</string>
+						<string>Readwise</string>
+					</array>
+				</array>
+			</dict>
+			<key>description</key>
+			<string>Search Readwise, Readwise Reader, or both.</string>
+			<key>label</key>
+			<string>Search Platform</string>
+			<key>type</key>
+			<string>popupbutton</string>
+			<key>variable</key>
+			<string>SEARCH_PLATFORM</string>
+		</dict>
 	</array>
-	<key>variablesdontexport</key>
-	<array/>
 	<key>version</key>
-	<string>0.3</string>
+	<string>0.4</string>
 	<key>webaddress</key>
 	<string>https://github.com/giovannicoppola/alfred-readwise</string>
 </dict>
