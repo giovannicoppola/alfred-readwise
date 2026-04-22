@@ -132,30 +132,20 @@ def queryItems(database, myInput):
 
         # Search Readwise highlights
         if SEARCH_READWISE:
-            keywords = mySearchInput.split()
-            if len(keywords) > 1:
-                conditions = []
-                conditions2 = []
-                for keyword in keywords:
-                    if SEARCH_SCOPE == "Text":
-                        conditions.append(f"(highText LIKE '%{keyword}%')")
-                        conditions_str = " AND ".join(conditions)
-                    elif SEARCH_SCOPE == "Book":
-                        conditions.append(f"(title LIKE '%{keyword}%')")
-                        conditions_str = " AND ".join(conditions)
-                    elif SEARCH_SCOPE == "Both":
-                        conditions.append(f"(highText LIKE '%{keyword}%')")
-                        conditions1_str = " AND ".join(conditions)
-                        conditions2.append(f"(title LIKE '%{keyword}%')")
-                        conditions2_str = " AND ".join(conditions2)
-                        conditions_str = f'({conditions1_str}) OR ({conditions2_str})'
+            if SEARCH_SCOPE == "All":
+                rw_columns = ["highText", "title", "author"]
             else:
-                if SEARCH_SCOPE == "Text":
-                    conditions_str = f"(highText LIKE '%{mySearchInput}%')"
-                elif SEARCH_SCOPE == "Book":
-                    conditions_str = f"(title LIKE '%{mySearchInput}%')"
-                elif SEARCH_SCOPE == "Both":
-                    conditions_str = f"(highText LIKE '%{mySearchInput}%' or title LIKE '%{mySearchInput}%')"
+                rw_columns = ["highText"]
+
+            keywords = mySearchInput.split()
+            if keywords:
+                col_clauses = []
+                for col in rw_columns:
+                    kw_conditions = [f"({col} LIKE '%{kw}%')" for kw in keywords]
+                    col_clauses.append(f"({' AND '.join(kw_conditions)})")
+                conditions_str = " OR ".join(col_clauses)
+            else:
+                conditions_str = "1=1"
 
             sql = f"SELECT * FROM highlights WHERE {conditions_str} and category IN ({myTypes}) {tag_sql}"
             log (sql)
@@ -206,9 +196,18 @@ def queryItems(database, myInput):
 
         # Search Reader documents
         if SEARCH_READER:
+            if SEARCH_SCOPE == "All":
+                reader_columns = ["title", "author", "site_name"]
+            else:
+                reader_columns = ["title"]
+
             keywords = mySearchInput.split()
             if keywords:
-                reader_conditions = " AND ".join([f"title LIKE '%{kw}%'" for kw in keywords])
+                col_clauses = []
+                for col in reader_columns:
+                    kw_conditions = [f"({col} LIKE '%{kw}%')" for kw in keywords]
+                    col_clauses.append(f"({' AND '.join(kw_conditions)})")
+                reader_conditions = " OR ".join(col_clauses)
             else:
                 reader_conditions = "1=1"
 

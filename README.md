@@ -48,9 +48,8 @@ src="https://img.shields.io/github/downloads/giovannicoppola/alfred-readwise/tot
 	- set refresh rate (in days). Default: `30`
 	- set 'book' name from highlights entered via Alfred. Default: `Highlights from Alfred`
 	- set search scope:
-		- `Highlight`: search highlight text only
-		- `Book`: search book titles only
-		- `Both` (default): search across highlights and book titles
+		- `Main` (default): search primary content only (highlight text for Readwise, document title for Reader)
+		- `All`: search all fields (highlight text + book title + author for Readwise; title + author + site name for Reader)
 
 
 <h1 id="usage">Basic Usage 📖</h1>
