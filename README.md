@@ -97,6 +97,9 @@ src="https://img.shields.io/github/downloads/giovannicoppola/alfred-readwise/tot
 
 <h1 id="changelog">Changelog 🧰</h1>
 
+### New in version 0.4
+- Highlights created via Alfred are now immediately saved to the local database, so they appear in search results without requiring a full database refresh
+
 - 04-04-2023: version 0.1
 
 

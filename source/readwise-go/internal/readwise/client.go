@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"readwise-go/internal/config"
 	"readwise-go/internal/database"
 )
 
@@ -137,8 +138,20 @@ func (c *Client) ExportAll() ([]Book, error) {
 	return allBooks, nil
 }
 
-// CreateHighlight creates a new highlight
-func (c *Client) CreateHighlight(text, title string) error {
+// HighlightCreateResponse represents a single highlight returned by the create API
+type HighlightCreateResponse struct {
+	ID            int    `json:"id"`
+	Text          string `json:"text"`
+	Title         string `json:"title"`
+	SourceType    string `json:"source_type"`
+	HighlightedAt string `json:"highlighted_at"`
+	BookID        int    `json:"book_id"`
+	URL           string `json:"url"`
+	ReadwiseURL   string `json:"readwise_url"`
+}
+
+// CreateHighlight creates a new highlight and returns the API response
+func (c *Client) CreateHighlight(text, title string) ([]HighlightCreateResponse, error) {
 	request := HighlightCreateRequest{
 		Highlights: []HighlightCreate{
 			{
@@ -152,30 +165,43 @@ func (c *Client) CreateHighlight(text, title string) error {
 
 	jsonData, err := json.Marshal(request)
 	if err != nil {
-		return fmt.Errorf("failed to marshal request: %w", err)
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
+	config.Log("[DEBUG CreateHighlight] POST URL: %s", c.baseURL+"/highlights/")
+	config.Log("[DEBUG CreateHighlight] request body: %s", string(jsonData))
 
 	req, err := http.NewRequest("POST", c.baseURL+"/highlights/",
 		strings.NewReader(string(jsonData)))
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Authorization", "Token "+c.token)
 	req.Header.Set("Content-Type", "application/json")
 
+	config.Log("[DEBUG CreateHighlight] sending request...")
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to make request: %w", err)
+		config.Log("[DEBUG CreateHighlight] HTTP error: %v", err)
+		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
 	defer resp.Body.Close()
 
+	body, _ := io.ReadAll(resp.Body)
+	config.Log("[DEBUG CreateHighlight] response status: %d", resp.StatusCode)
+	config.Log("[DEBUG CreateHighlight] response body: %s", string(body))
+
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
-	return nil
+	var created []HighlightCreateResponse
+	if err := json.Unmarshal(body, &created); err != nil {
+		config.Log("[DEBUG CreateHighlight] failed to parse response: %v", err)
+		return nil, fmt.Errorf("failed to parse create response: %w", err)
+	}
+
+	return created, nil
 }
 
 // ConvertToDBHighlight converts API data to database highlight
