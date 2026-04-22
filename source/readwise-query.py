@@ -177,7 +177,7 @@ def queryItems(database, myInput):
                     'valid': True,
                     "quicklookurl": myQuickLook,
                     'variables': {
-                        "fullOutput": f"{r['highText']}\n\n{r['author']}: {r['title']}",
+                        "fullOutput": f"> {r['highText']}\n\n— *{r['author']}*: **{r['title']}**",
                         "myURL": myURL,
                         "myStatus": 'completed',
                         "myURLall": myURLall
@@ -236,12 +236,16 @@ def queryItems(database, myInput):
                 openURL = r['source_url'] or r['url'] or ''
                 urlText = "open in browser" if openURL else "no URL"
 
-                fullParts = [r['title'] or '(no title)']
+                title = r['title'] or '(no title)'
+                fullParts = [f"## {title}"]
+                author = r['author'] or ''
+                if author:
+                    fullParts.append(f"*{author}*")
                 try:
                     if r['summary']:
-                        fullParts.append(r['summary'])
+                        fullParts.append(f"> {r['summary']}")
                     if r['notes']:
-                        fullParts.append(f"Notes: {r['notes']}")
+                        fullParts.append(f"**Notes:** {r['notes']}")
                 except (IndexError, KeyError):
                     pass
                 fullOutput = "\n\n".join(fullParts)
