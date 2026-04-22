@@ -12,78 +12,198 @@
 import json
 import sqlite3
 import os
+import re
 import shutil
 import requests
 import urllib.request
 from config import MY_DATABASE, TOKEN, log, IMAGE_FOLDER, IMAGE_H_FOLDER, SEARCH_PLATFORM
-from PIL import Image, ImageDraw, ImageFont
-import textwrap
 
-def createImage(highText,highAuthor,highTitle,highID):
-	# Compile the string to be shown
-	toShow = f"{highText}\n\n{highAuthor}: {highTitle}"
-	
-	image_width = 1200
-	image_height = 800
-	dpi = 96
+try:
+	from PIL import Image, ImageDraw, ImageFont
+	_PIL_AVAILABLE = True
+except Exception:
+	_PIL_AVAILABLE = False
+	log("[createImage] Pillow not available; QuickLook previews disabled.")
 
-	# Set the font size and maximum width for text wrapping
-	font_size = 30
-	max_width = 1000
+# ---------------------------------------------------------------------------
+# Layout constants (adapted from alfred-kindle highlight_images.py)
+# ---------------------------------------------------------------------------
+_IMG_W = 1200
+_IMG_H_MIN = 420
+_IMG_H_MAX = 1600
+_DPI = 96
+_PADDING = 40
+_BG = (252, 250, 245)
+_FG = (20, 20, 20)
+_MUTED = (110, 108, 102)
+_ACCENT = (181, 153, 70)
+_BORDER = (200, 195, 185)
+_BORDER_W = 4
+_BODY_GAP = 18
 
-	# Set the padding value (in pixels)
-	padding = 20
+_USER_FONTS = os.path.expanduser("~/Library/Fonts")
+_SERIF_CANDIDATES = [
+	f"{_USER_FONTS}/Newsreader-Medium.ttf",
+	f"{_USER_FONTS}/Newsreader-Regular.ttf",
+	f"{_USER_FONTS}/Newsreader-VariableFont_opsz,wght.ttf",
+	"/Library/Fonts/Newsreader-Medium.ttf",
+	"/Library/Fonts/Newsreader-Regular.ttf",
+	"/System/Library/Fonts/Supplemental/Georgia.ttf",
+	"/Library/Fonts/Georgia.ttf",
+	"/System/Library/Fonts/Supplemental/Charter.ttc",
+	"/System/Library/Fonts/Palatino.ttc",
+	"/System/Library/Fonts/NewYork.ttf",
+	"Georgia.ttf",
+]
+_SANS_CANDIDATES = [
+	"/System/Library/Fonts/Helvetica.ttc",
+	"/System/Library/Fonts/HelveticaNeue.ttc",
+	"/System/Library/Fonts/SFNSDisplay.ttf",
+	"Helvetica.ttf",
+]
 
-	# Set the background color
-	background_color = (255, 255, 255)
+_FONT_CACHE = {}
 
-	# Set the font type
-	font_type = "Georgia.ttf"
+_PARAGRAPH_BREAK_RE = re.compile(r"\s*\n\s*\n\s*")
+_INLINE_WS_RE = re.compile(r"\s+")
 
-	# Set the line spacing (adjust as needed)
-	line_spacing = 20
 
-	# Set the border color
-	border_color = (128, 128, 128)
-	border_width = 5
+def _normalize_body(text):
+	if not text:
+		return ""
+	paragraphs = _PARAGRAPH_BREAK_RE.split(text)
+	cleaned = [_INLINE_WS_RE.sub(" ", p).strip() for p in paragraphs]
+	return "\n\n".join(p for p in cleaned if p)
 
-	# Create a new image with the specified background color
-	image = Image.new("RGB", (image_width, image_height), background_color)
+
+def _load_font(candidates, size):
+	key = (tuple(candidates), size)
+	if key in _FONT_CACHE:
+		return _FONT_CACHE[key]
+	for path in candidates:
+		try:
+			f = ImageFont.truetype(path, size)
+			_FONT_CACHE[key] = f
+			return f
+		except Exception:
+			continue
+	f = ImageFont.load_default()
+	_FONT_CACHE[key] = f
+	return f
+
+
+def _wrap_for_font(draw, text, font, max_width):
+	out = []
+	for paragraph in text.splitlines() or [""]:
+		words = paragraph.split(" ")
+		line = ""
+		for w in words:
+			candidate = f"{line} {w}".strip()
+			if draw.textlength(candidate, font=font) <= max_width:
+				line = candidate
+			else:
+				if line:
+					out.append(line)
+				line = w
+		out.append(line)
+	return out
+
+
+def _line_height(font):
+	ascent, descent = font.getmetrics()
+	return ascent + descent
+
+
+def createImage(highText, highAuthor, highTitle, highID):
+	if not _PIL_AVAILABLE:
+		return
+
+	out_path = f"{IMAGE_H_FOLDER}{highID}.jpg"
+
+	body_font = _load_font(_SERIF_CANDIDATES, 30)
+	footer_font = _load_font(_SANS_CANDIDATES, 20)
+
+	body_lh = _line_height(body_font) + 10
+	footer_lh = _line_height(footer_font)
+
+	max_width = _IMG_W - (2 * _PADDING) - 8
+
+	# Measure pass
+	scratch = Image.new("RGB", (1, 1), _BG)
+	sdraw = ImageDraw.Draw(scratch)
+
+	body_text = _normalize_body(highText)
+	body_lines = _wrap_for_font(sdraw, body_text, body_font, max_width)
+
+	body_max_lines = (_IMG_H_MAX - _IMG_H_MIN) // body_lh + 10
+	truncated = False
+	if len(body_lines) > body_max_lines:
+		body_lines = body_lines[:body_max_lines]
+		truncated = True
+
+	footer_bits = []
+	if highTitle:
+		footer_bits.append(highTitle)
+	if highAuthor:
+		footer_bits.append(highAuthor)
+	footer_text = "   ·   ".join(footer_bits)
+
+	# Compute canvas height
+	h_total = _PADDING
+	h_total += body_lh * len(body_lines)
+	if footer_text:
+		h_total += _BODY_GAP + footer_lh
+	h_total += _PADDING
+
+	img_h = max(_IMG_H_MIN, min(_IMG_H_MAX, h_total))
+
+	# Draw pass
+	image = Image.new("RGB", (_IMG_W, img_h), _BG)
 	draw = ImageDraw.Draw(image)
 
-	# Set the font and font size
-	font = ImageFont.truetype(font_type, font_size)
+	# Accent stripe
+	draw.rectangle([(0, 0), (8, img_h)], fill=_ACCENT)
 
-	# Wrap the text to multiple lines, preserving newline characters
-	wrapped_text = ""
-	for line in toShow.splitlines():
-		wrapped_text += textwrap.fill(line, width=int(max_width / (font_size / 2))) + "\n"
+	y = _PADDING
 
-	# Calculate the total text height based on the number of lines and line spacing
-	line_height = font.getbbox("A")[3] - font.getbbox("A")[1]
-	text_height = len(wrapped_text.split('\n')) * line_height + (len(wrapped_text.split('\n')) - 1) * line_spacing
+	# Re-trim body if clamped
+	reserved_for_tail = 0
+	if footer_text:
+		reserved_for_tail += _BODY_GAP + footer_lh
+	reserved_for_tail += _PADDING
+	body_budget = img_h - y - reserved_for_tail
+	max_body_lines = max(1, body_budget // body_lh)
+	if len(body_lines) > max_body_lines:
+		body_lines = body_lines[:max_body_lines]
+		truncated = True
 
-	# Set the DPI for higher resolution
-	image.info["dpi"] = dpi
+	if truncated and body_lines:
+		while body_lines and draw.textlength(
+			body_lines[-1] + " …", font=body_font
+		) > max_width:
+			body_lines[-1] = body_lines[-1][:-1]
+		body_lines[-1] = body_lines[-1].rstrip() + " …"
 
-	# Resize the image
-	image = image.resize((image_width, image_height), resample=Image.LANCZOS)
+	for line in body_lines:
+		draw.text((_PADDING + 8, y), line, font=body_font, fill=_FG)
+		y += body_lh
 
-	# Create a new draw object
-	draw = ImageDraw.Draw(image)
+	if footer_text:
+		fy = img_h - _PADDING - footer_lh
+		while draw.textlength(footer_text, font=footer_font) > max_width and len(footer_text) > 40:
+			footer_text = footer_text[:-1]
+		draw.text((_PADDING + 8, fy), footer_text, font=footer_font, fill=_MUTED)
 
-	# Draw the wrapped text on the image
-	text_x = padding
-	text_y = padding
-	for line in wrapped_text.split('\n'):
-		draw.text((text_x, text_y), line, font=font, fill="black")
-		text_y += line_height + line_spacing
+	# Frame
+	draw.rectangle(
+		[(0, 0), (_IMG_W - 1, img_h - 1)],
+		outline=_BORDER, width=_BORDER_W,
+	)
 
-	# Add a border to the image
-	draw.rectangle([(0, 0), (image_width - 1, image_height - 1)], outline=border_color, width=border_width)
-
-	# Save the image as a JPEG file with higher resolution
-	image.save(f"{IMAGE_H_FOLDER}{highID}.jpg", "JPEG", dpi=(dpi, dpi))
+	image.info["dpi"] = _DPI
+	tmp_path = out_path + ".tmp"
+	image.save(tmp_path, "JPEG", dpi=(_DPI, _DPI), quality=85, optimize=True)
+	os.replace(tmp_path, out_path)
 
 
 
