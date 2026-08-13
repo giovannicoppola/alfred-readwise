@@ -28,7 +28,7 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 
 <h1 id="motivation">Motivation ✅</h1>
 
-- Quickly list, search, and open your Readwise highlights
+- Quickly list, search, and open your Readwise highlights and/or your Readwise Reader articles.
 - Add new highlights to your account through Alfred
 
 
@@ -52,7 +52,16 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 	- set what to show in results: `books`, `tweets`, `supplementals`, `articles`, `podcasts`
 	- set refresh rate (in days). Default: `30`
 	- set 'book' name from highlights entered via Alfred. Default: `Highlights from Alfred`
-	- set search scope. This applies to **Readwise highlights** only — Reader documents are always searched by title, author and site name, since those are how you look for an article:
+	- set **Search Platform** — which of your two Readwise libraries the workflow searches:
+		- `Readwise` (default): your highlights only
+		- `Reader`: your Readwise Reader documents only
+		- `Readwise and Readwise Reader`: both, in one result list
+		- whatever you pick here, you can override it for a single query with `--reader` or `--readwise` (see below)
+	- set **Open Reader documents in** — where <kbd>^</kbd><kbd>↩</kbd> opens a Reader document:
+		- `Browser` (default): opens `read.readwise.io` in your default browser
+		- `Reader app`: opens the document in the Readwise Reader desktop app, falling back to the browser if it isn't installed
+		- this setting only has an effect when Reader documents can appear in your results, i.e. when **Search Platform** includes Reader
+	- set **Search Scope**. This applies to **Readwise highlights** only — Reader documents are always searched by title, author and site name, since those are how you look for an article:
 		- `Main` (default): search the highlight text only
 		- `Include metadata`: also search the book title and author. Note that an author match returns every highlight from that book.
 
@@ -62,14 +71,30 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 ## Searching your Readwise database 🔍
 - launch with keyword (default: `!r`), or custom hotkey
 - standard search will be through highlight text and book titles. Multiple word (fragments) supported
-- typing `#` will prompt a label search which can be added to the standard search, multiple labels supported
-- type `--reader` or `--readwise` to restrict results to that platform for the current query
-	- `enter` ↩️ will show the highlight in large font and copy to clipboard
-	- `shift-enter` ⇧↩️ will show the highlight in large font and copy to clipboard without closing Alfred
-	- `command-enter` ⌘↩️ will open the source URL if available (typically for tweets)
-	- `ctrl-enter` ^↩️ will open the highlight on Readwise
-	- `shift-ctrl-enter` ⇧^↩️ will open all highlights from that book on Readwise
-	- `shift` alone: Quicklook of your highlight.
+- Reader documents, if included, are matched on title, author and site name
+- type `--reader` or `--readwise` anywhere in the query to restrict results to that platform, whatever **Search Platform** is set to
+
+### Labels 🏷️
+- typing `#` brings up your labels, which can be combined with the standard search — multiple labels supported
+- the list covers **both** your highlight tags and your Reader labels, and each one carries a count of how many items it holds, so you can see at a glance whether a label is worth filtering on
+	- with both platforms in your results the count is split `highlights/documents` — e.g. `#genetics (12/48)` — since a single total would hide which library the label actually lives in
+	- searching one platform only shows one number, counting just that platform
+- busiest labels are listed first
+- a label filters both libraries independently: `#genetics` returns the highlights tagged `genetics` *and* the Reader documents labelled `genetics`, not everything in a library that happens to have any label
+
+### Modifiers ⌨️
+On a **highlight**:
+- `enter` ↩️ will show the highlight in large font and copy to clipboard
+- `shift-enter` ⇧↩️ will show the highlight in large font and copy to clipboard without closing Alfred
+- `command-enter` ⌘↩️ will open the source URL if available (typically for tweets)
+- `ctrl-enter` ^↩️ will open the highlight on Readwise
+- `shift-ctrl-enter` ⇧^↩️ will open all highlights from that book on Readwise
+- `shift` alone (or ⌘-Y): Quicklook of your highlight.
+
+On a **Reader document**:
+- `enter` ↩️ shows the title, author, summary and your notes in large font
+- `ctrl-enter` ^↩️ opens the document in Reader — in the browser or in the Reader app, depending on **Open Reader documents in**
+- `command-enter` ⌘↩️ opens the original article at its source URL
 
 
 ## Entering new highlights ⭐
