@@ -46,7 +46,8 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 ## Default settings 
 - In Alfred, open the 'Configure Workflow' menu in `alfred-readwise` preferences
 	- set the keyword for the workflow (default: `!r`)
-	- set the keyword to force refresh (default: `readwise:refresh`)
+	- set the keyword to force refresh (default: `readwise:refresh`) — syncs only what changed
+	- set the keyword for a full rebuild (default: `readwise:rebuild`) — downloads everything again
 	- set the Readwise API token (login into your account, then copy it [here](https://readwise.io/access_token))
 	- set what to show in results: `books`, `tweets`, `supplementals`, `articles`, `podcasts`
 	- set refresh rate (in days). Default: `30`
@@ -77,7 +78,8 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 
 ## Database refresh 🔄
 - will occur according to the rate in days set in `alfred-readwise` preferences, or...
-	- `readwise:refresh` to force database refresh
+	- `readwise:refresh` — sync just what changed since the last run. This is normally near-instant, because it asks the API only for highlights and documents updated since then.
+	- `readwise:rebuild` — download everything again from scratch. Slower (minutes for a large library, as the API rate-limits long syncs), but it is the only way to remove highlights you deleted in Readwise, since an incremental sync cannot see deletions. This also runs automatically every 30 days.
 
 
 <h1 id="known-issues">Limitations & known issues ⚠️</h1>

@@ -690,6 +690,57 @@ open "$url"
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>alfredfiltersresultsmatchmode</key>
+				<integer>0</integer>
+				<key>argumenttreatemptyqueryasnil</key>
+				<true/>
+				<key>argumenttrimmode</key>
+				<integer>0</integer>
+				<key>argumenttype</key>
+				<integer>2</integer>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>keyword</key>
+				<string>{var:fullrebuildkeyword}</string>
+				<key>queuedelaycustom</key>
+				<integer>3</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<true/>
+				<key>queuedelaymode</key>
+				<integer>0</integer>
+				<key>queuemode</key>
+				<integer>1</integer>
+				<key>runningsubtext</key>
+				<string>please wait, rebuilding from scratch... ⏳</string>
+				<key>script</key>
+				<string>export PYTHONPATH="$PWD/lib"
+/usr/bin/python3 readwise-rebuild.py full
+</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>subtext</key>
+				<string>downloads everything again; also removes deleted highlights</string>
+				<key>title</key>
+				<string>full rebuild of Readwise database 🔄</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>E3512DF6-3247-46DD-A93E-0CF42BC3F2F7</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
 	</array>
 	<key>readme</key>
 	<string># alfred-readwise
@@ -881,6 +932,13 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 			<key>ypos</key>
 			<real>455.0</real>
 		</dict>
+		<key>E3512DF6-3247-46DD-A93E-0CF42BC3F2F7</key>
+		<dict>
+			<key>xpos</key>
+			<real>1025.0</real>
+			<key>ypos</key>
+			<real>220.0</real>
+		</dict>
 	</dict>
 	<key>userconfigurationconfig</key>
 	<array>
@@ -925,6 +983,27 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 			<string>textfield</string>
 			<key>variable</key>
 			<string>refreshkeyword</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string>readwise:rebuild</string>
+				<key>placeholder</key>
+				<string></string>
+				<key>required</key>
+				<false/>
+				<key>trim</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string>Rebuilds the database from scratch instead of syncing only what changed. Slower, but it is the only way to drop highlights you deleted in Readwise. Runs automatically every 30 days.</string>
+			<key>label</key>
+			<string>Full rebuild keyword</string>
+			<key>type</key>
+			<string>textfield</string>
+			<key>variable</key>
+			<string>fullrebuildkeyword</string>
 		</dict>
 		<dict>
 			<key>config</key>
