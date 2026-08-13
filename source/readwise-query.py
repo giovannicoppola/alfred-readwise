@@ -195,9 +195,9 @@ def queryItems(database, myInput):
                 if not tagCountsKnown:
                     label = thislabel
                 elif SEARCH_READWISE and SEARCH_READER:
-                    label = f"{thislabel} ({highCount}/{readerCount})"
+                    label = f"{thislabel} ({highCount:,}/{readerCount:,})"
                 else:
-                    label = f"{thislabel} ({highCount + readerCount})"
+                    label = f"{thislabel} ({highCount + readerCount:,})"
                 result["items"].append({
                 "title": label,
                 "subtitle": myInput,
@@ -267,7 +267,7 @@ def queryItems(database, myInput):
                 myQuickLook = f"{IMAGE_H_FOLDER}{r['highID']}.jpg"
                 result["items"].append({
                     "title": r['highText'],
-                    'subtitle': f"{myCounter}/{totCount} {r['title']}-{r['author']} {myTags}",
+                    'subtitle': f"{myCounter:,}/{totCount:,} {r['title']}-{r['author']} {myTags}",
                     'valid': True,
                     "quicklookurl": myQuickLook,
                     'variables': {
@@ -338,7 +338,7 @@ def queryItems(database, myInput):
                 readerCounter += 1
                 totalResults += 1
 
-                subtitle = f"📖 Reader {readerCounter}/{readerCount}"
+                subtitle = f"📖 Reader {readerCounter:,}/{readerCount:,}"
                 if r['author']:
                     subtitle += f" — {r['author']}"
                 if r['category']:
