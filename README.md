@@ -51,9 +51,9 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 	- set what to show in results: `books`, `tweets`, `supplementals`, `articles`, `podcasts`
 	- set refresh rate (in days). Default: `30`
 	- set 'book' name from highlights entered via Alfred. Default: `Highlights from Alfred`
-	- set search scope:
-		- `Main` (default): search primary content only (highlight text for Readwise, document title for Reader)
-		- `All`: search all fields (highlight text + book title + author for Readwise; title + author + site name for Reader)
+	- set search scope. This applies to **Readwise highlights** only — Reader documents are always searched by title, author and site name, since those are how you look for an article:
+		- `Main` (default): search the highlight text only
+		- `Include metadata`: also search the book title and author. Note that an author match returns every highlight from that book.
 
 
 <h1 id="usage">Basic Usage 📖</h1>

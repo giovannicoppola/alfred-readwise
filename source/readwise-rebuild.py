@@ -33,12 +33,27 @@ with rebuildLock() as acquired:
     FULL = len(sys.argv) > 1 and sys.argv[1].strip().lower() == "full"
     log ("rebuilding database ⏳..." if FULL else "syncing changes ⏳...")
 
+    ok = True
     if SEARCH_PLATFORM in ("Readwise highlights", "Readwise"):
-        refreshReadwiseDatabase(full=FULL)
-        makeLabelList()
+        # only rebuild the tag list if the sync landed: after a failed first-ever sync
+        # there is no populated highlights table to read, and an unhandled error here
+        # would replace the result JSON with a traceback
+        if refreshReadwiseDatabase(full=FULL):
+            makeLabelList()
+        else:
+            ok = False
     if SEARCH_PLATFORM in ("Readwise Reader", "Readwise"):
-        refreshReaderDatabase(full=FULL)
-    log ("done 👍")
+        ok = refreshReaderDatabase(full=FULL) and ok
+    log ("done 👍" if ok else "finished with errors")
+
+    if not ok:
+        print(json.dumps({"items": [{
+            "title": "Sync did not complete",
+            "subtitle": "check the token and connection, then try again",
+            "arg": "",
+            "icon": {"path": "icons/Warning.png"}
+        }]}))
+        sys.exit(0)
 	
 
 result= {"items": [{

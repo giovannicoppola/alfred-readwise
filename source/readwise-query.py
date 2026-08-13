@@ -11,6 +11,7 @@ import json
 from datetime import datetime, date
 import sqlite3
 import re
+import contextlib
 
 
 from config import TOKEN, ARTICLES_CHECK,BOOKS_CHECK, TWEETS_CHECK, PODCASTS_CHECK, SUPPLEMENTALS_CHECK, log, MY_DATABASE, RefRate, IMAGE_FOLDER, IMAGE_H_FOLDER, SEARCH_SCOPE, SEARCH_PLATFORM
@@ -26,11 +27,15 @@ SEARCH_READER = SEARCH_PLATFORM in ("Readwise Reader", "Readwise")
 log(f"SEARCH_READWISE = {SEARCH_READWISE}, SEARCH_READER = {SEARCH_READER}")
 
 def refreshAll():
+    ok = True
     if SEARCH_READWISE:
-        refreshReadwiseDatabase()
-        makeLabelList()
+        ok = refreshReadwiseDatabase() and ok
+        # only worth rebuilding the tag list if the highlights sync actually landed
+        if ok:
+            makeLabelList()
     if SEARCH_READER:
-        refreshReaderDatabase()
+        ok = refreshReaderDatabase() and ok
+    return ok
 
 def guardedRefresh(what, fn):
     """Run a refresh only if no other one is in progress and we are not cooling down.
@@ -47,8 +52,14 @@ def guardedRefresh(what, fn):
             log(f"{what}: skipped, another refresh is already running")
             return
         try:
-            fn()
-            clearCooldown()
+            # a failed sync does not raise -- it reports False -- so the cooldown has
+            # to be driven by the return value, otherwise a persistently failing sync
+            # is retried on every single keystroke
+            if fn() is False:
+                log(f"{what}: did not complete, backing off")
+                startCooldown()
+            else:
+                clearCooldown()
         except Exception as e:
             log(f"{what}: failed: {e}")
             startCooldown()
@@ -62,11 +73,15 @@ def checkingTime ():
     else:
         # Check if reader_documents table needs to be created or updated
         if SEARCH_READER:
+            readerTableOK = True
+            # closing() matters: the probe raising is the expected path, and this runs
+            # on every keystroke, so a leaked connection per keystroke adds up
             try:
-                db = sqlite3.connect(MY_DATABASE)
-                db.execute("SELECT summary FROM reader_documents LIMIT 1")
-                db.close()
+                with contextlib.closing(sqlite3.connect(MY_DATABASE)) as db:
+                    db.execute("SELECT summary FROM reader_documents LIMIT 1")
             except Exception:
+                readerTableOK = False
+            if not readerTableOK:
                 log("Reader table missing or outdated ... rebuilding")
                 guardedRefresh("Reader table build", refreshReaderDatabase)
 
@@ -75,8 +90,12 @@ def checkingTime ():
         time_elapsed = (timeToday-dt_obj).days
         log (str(time_elapsed)+" days from last update")
         if time_elapsed >= RefRate:
+            # must go through guardedRefresh like every other refresh site: the database
+            # mtime is not touched until the sync commits, so while a slow sync runs
+            # every new keystroke would otherwise see it as still stale and start
+            # another concurrent one
             log ("rebuilding database ⏳...")
-            refreshAll()
+            guardedRefresh("scheduled refresh", refreshAll)
             log ("done 👍")
             
 

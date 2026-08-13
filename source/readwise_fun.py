@@ -304,15 +304,26 @@ def clearCooldown():
 @contextlib.contextmanager
 def rebuildLock():
 	"""Context manager yielding True if this process may refresh, False otherwise."""
-	if os.path.exists(_LOCK_PATH) and not _lockIsStale():
+	if os.path.exists(_LOCK_PATH) and _lockIsStale():
+		try:
+			os.remove(_LOCK_PATH)    # holder is gone; clear the way for O_EXCL below
+		except OSError:
+			pass
+	try:
+		# create-exclusive so two script filters starting in the same instant cannot
+		# both decide the lock is free: exactly one open() can win
+		fd = os.open(_LOCK_PATH, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+	except FileExistsError:
 		yield False
 		return
-	try:
-		with open(_LOCK_PATH, "w") as f:
-			f.write(str(os.getpid()))
 	except OSError:
 		yield True               # can't lock; better to refresh than to block forever
 		return
+	try:
+		with os.fdopen(fd, "w") as f:
+			f.write(str(os.getpid()))
+	except OSError:
+		pass
 	try:
 		yield True
 	finally:
@@ -442,7 +453,13 @@ def _apiGet(url, params, label):
 				return None
 			return response
 
-		retry_after = min(int(response.headers.get('Retry-After', 60)), _MAX_RETRY_WAIT)
+		# Retry-After may legally be an HTTP-date rather than a number of seconds;
+		# an unparseable value must not turn a retryable 429 into a traceback
+		try:
+			retry_after = int(response.headers.get('Retry-After', 60))
+		except (TypeError, ValueError):
+			retry_after = 60
+		retry_after = min(retry_after, _MAX_RETRY_WAIT)
 		if attempt == _MAX_RATE_LIMIT_RETRIES:
 			log(f"{label}: still rate limited after {_MAX_RATE_LIMIT_RETRIES} attempts -- giving up. "
 			    "Wait a few minutes and rebuild again; check no other rebuild is already running.")
@@ -477,17 +494,6 @@ def refreshReadwiseDatabase (full=False):
 	full_data, complete = _fetchAllPages(
 		"https://readwise.io/api/v2/export/", "Readwise API", extraParams)
 
-	if not complete and since:
-		# a partial incremental result is safe to keep -- the watermark simply is not
-		# advanced, so whatever was missed is picked up next time
-		log("Readwise: sync incomplete, keeping existing data and watermark")
-	if not complete and not since:
-		# a partial *full* result would mean dropping the table and refilling it with
-		# a fraction of the library, which is worse than doing nothing
-		log("Readwise: full sync incomplete, leaving the database untouched")
-		db.close()
-		return
-
 	sql_drop = "DROP TABLE IF EXISTS highlights"
 	sql_create = """CREATE TABLE highlights (
 			user_book_id INT,
@@ -510,6 +516,23 @@ def refreshReadwiseDatabase (full=False):
 			high_readwise_url TEXT
 			)
 			"""
+	if not complete and since:
+		# a partial incremental result is safe to keep -- the watermark simply is not
+		# advanced, so whatever was missed is picked up next time
+		log("Readwise: sync incomplete, keeping existing data and watermark")
+	if not complete and not since:
+		# a partial *full* result would mean dropping the table and refilling it with
+		# a fraction of the library, which is worse than doing nothing
+		log("Readwise: full sync incomplete, leaving the database untouched")
+		# ...but sqlite3.connect() has already created the file, so on a first-ever
+		# sync the database would exist with no highlights table at all and every later
+		# query would raise "no such table". Leave an empty table behind so the
+		# workflow degrades to "no results" instead of dying.
+		db.execute(sql_create.replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS"))
+		db.commit()
+		db.close()
+		return False
+
 	c = db.cursor()
 	if since is None:
 		c.execute(sql_drop)
@@ -627,6 +650,9 @@ def refreshReadwiseDatabase (full=False):
 	db.close()
 	log(f"Readwise: {'full' if since is None else 'incremental'} sync stored "
 	    f"{highlightCount} highlights from {len(touchedBooks)} books")
+	# report success/failure by return value: callers need to know a sync failed, and
+	# these functions deliberately do not raise on API errors
+	return complete
 
 def makeLabelList():
 	db=sqlite3.connect(MY_DATABASE)	
@@ -698,8 +724,16 @@ def refreshReaderDatabase(full=False):
 
 	if not complete and not since:
 		log("Reader: full sync incomplete, leaving the database untouched")
+		# as above: leave an empty table so the "is the Reader table missing?" probe in
+		# the script filter stops firing a fresh full sync on every keystroke
+		db.execute("""CREATE TABLE IF NOT EXISTS reader_documents (
+				id TEXT PRIMARY KEY, title TEXT, author TEXT, category TEXT,
+				source TEXT, url TEXT, source_url TEXT, site_name TEXT,
+				image_url TEXT, location TEXT, tags TEXT, created_at TEXT,
+				updated_at TEXT, summary TEXT, notes TEXT)""")
+		db.commit()
 		db.close()
-		return
+		return False
 
 	c = db.cursor()
 	if since is None:
@@ -750,6 +784,7 @@ def refreshReaderDatabase(full=False):
 	db.close()
 	log(f"Reader: {'full' if since is None else 'incremental'} sync stored "
 	    f"{len(full_data)} documents")
+	return complete
 
 
 """
