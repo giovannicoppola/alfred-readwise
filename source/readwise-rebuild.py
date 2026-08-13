@@ -27,12 +27,17 @@ with rebuildLock() as acquired:
 
     # an explicit rebuild is a deliberate act: clear any cooldown from earlier failures
     clearCooldown()
-    log ("rebuilding database ⏳...")
+
+    # "full" forces a rebuild from scratch, which is the only way to drop highlights
+    # that were deleted in Readwise; without it the sync only fetches what changed.
+    FULL = len(sys.argv) > 1 and sys.argv[1].strip().lower() == "full"
+    log ("rebuilding database ⏳..." if FULL else "syncing changes ⏳...")
+
     if SEARCH_PLATFORM in ("Readwise highlights", "Readwise"):
-        refreshReadwiseDatabase()
+        refreshReadwiseDatabase(full=FULL)
         makeLabelList()
     if SEARCH_PLATFORM in ("Readwise Reader", "Readwise"):
-        refreshReaderDatabase()
+        refreshReaderDatabase(full=FULL)
     log ("done 👍")
 	
 

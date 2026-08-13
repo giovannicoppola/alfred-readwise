@@ -17,6 +17,7 @@ import shutil
 import contextlib
 import requests
 import urllib.request
+from datetime import datetime, timezone, timedelta
 from config import MY_DATABASE, TOKEN, log, IMAGE_FOLDER, IMAGE_H_FOLDER, SEARCH_PLATFORM
 
 try:
@@ -296,6 +297,105 @@ def rebuildLock():
 			pass
 
 
+# ---------------------------------------------------------------------------
+# Incremental sync
+#
+# Both APIs accept an `updatedAfter` timestamp and return only what changed since
+# then. A full sync of a large library is dozens of pages and always trips the
+# 20 requests/minute limit, costing a minute of dead waiting; an incremental sync
+# is normally a single page. The watermark for each source is kept in a sync_state
+# table inside the same database.
+#
+# Incremental sync cannot see deletions -- a highlight deleted in Readwise stays in
+# the local database until a full rebuild. Pass full=True (or run the rebuild
+# keyword with the argument "full") to start from scratch.
+# ---------------------------------------------------------------------------
+
+# rewind the watermark slightly so an edit made *during* a sync is not missed
+_WATERMARK_SAFETY_SECONDS = 120
+
+# Incremental sync never notices deletions, so fall back to a full sync periodically.
+# This keeps the database honest without needing a separate keyword for it.
+_FULL_RESYNC_DAYS = 30
+
+
+def _utcNow():
+	return datetime.now(timezone.utc)
+
+
+def _apiTimestamp(dt):
+	return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def _ensureSyncState(db):
+	db.execute("CREATE TABLE IF NOT EXISTS sync_state (key TEXT PRIMARY KEY, value TEXT)")
+
+
+def _getSyncState(db, key):
+	_ensureSyncState(db)
+	row = db.execute("SELECT value FROM sync_state WHERE key = ?", (key,)).fetchone()
+	return row[0] if row else None
+
+
+def _setSyncState(db, key, value):
+	_ensureSyncState(db)
+	db.execute("INSERT OR REPLACE INTO sync_state (key, value) VALUES (?, ?)", (key, value))
+
+
+def _fullSyncDue(db, key):
+	"""True if a from-scratch sync has not run for a while (or ever)."""
+	stamp = _getSyncState(db, key)
+	if not stamp:
+		return True
+	try:
+		last = datetime.strptime(stamp, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+	except ValueError:
+		return True
+	return (_utcNow() - last) > timedelta(days=_FULL_RESYNC_DAYS)
+
+
+def _tableExists(db, name):
+	return db.execute(
+		"SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)
+	).fetchone() is not None
+
+
+def _indexExists(db, name):
+	return db.execute(
+		"SELECT 1 FROM sqlite_master WHERE type='index' AND name=?", (name,)
+	).fetchone() is not None
+
+
+def _fetchAllPages(url, label, extraParams=None):
+	"""Page through an endpoint. Returns (results, complete).
+
+	`complete` is False when a page failed, so the caller knows not to advance the
+	sync watermark past data it never actually received.
+	"""
+	results = []
+	next_page_cursor = None
+	page = 0
+	while True:
+		page += 1
+		params = dict(extraParams or {})
+		if next_page_cursor:
+			params['pageCursor'] = next_page_cursor
+		log(f"{label}: fetching page {page}...")
+
+		response = _apiGet(url, params, label)
+		if response is None:
+			return results, False
+
+		data = response.json()
+		batch = data.get('results', [])
+		results.extend(batch)
+		log(f"{label}: got {len(batch)} (total: {len(results)})")
+
+		next_page_cursor = data.get('nextPageCursor')
+		if not next_page_cursor:
+			return results, True
+
+
 def _apiGet(url, params, label):
 	"""GET with bounded 429 retries. Returns a 200 response, or None to stop paging."""
 	import time as _time
@@ -328,33 +428,42 @@ def _apiGet(url, params, label):
 	return None
 
 
-def refreshReadwiseDatabase ():
-	full_data = []
-	next_page_cursor = None
-	page = 0
-	while True:
-		page += 1
-		params = {}
-		if next_page_cursor:
-			params['pageCursor'] = next_page_cursor
-		log(f"Readwise API: fetching page {page}...")
+def refreshReadwiseDatabase (full=False):
+	startedAt = _utcNow()
+	db = sqlite3.connect(MY_DATABASE)
 
-		response = _apiGet("https://readwise.io/api/v2/export/", params, "Readwise API")
-		if response is None:
-			break
+	# Decide between an incremental and a full sync. A database written by an older
+	# version has no unique index on highID, so INSERT OR REPLACE could not de-duplicate
+	# -- rebuild it once from scratch instead.
+	since = None if full else _getSyncState(db, 'highlights_synced_at')
+	if since and not (_tableExists(db, 'highlights') and _indexExists(db, 'idx_highlights_highID')):
+		log("Readwise: database predates incremental sync, doing one full rebuild")
+		since = None
+	if since and _fullSyncDue(db, 'highlights_full_synced_at'):
+		log(f"Readwise: no full sync in {_FULL_RESYNC_DAYS} days, doing one now to catch deletions")
+		since = None
 
-		data = response.json()
-		results = data.get('results', [])
-		full_data.extend(results)
-		log(f"Readwise API: got {len(results)} books (total: {len(full_data)})")
+	extraParams = {'updatedAfter': since} if since else {}
+	if since:
+		log(f"Readwise: incremental sync of changes since {since}")
+	else:
+		log("Readwise: full sync")
 
-		next_page_cursor = data.get('nextPageCursor')
-		if not next_page_cursor:
-			break
-	
-	
-	db=sqlite3.connect(MY_DATABASE)	
-	sql_drop = "DROP TABLE IF EXISTS highlights" 
+	full_data, complete = _fetchAllPages(
+		"https://readwise.io/api/v2/export/", "Readwise API", extraParams)
+
+	if not complete and since:
+		# a partial incremental result is safe to keep -- the watermark simply is not
+		# advanced, so whatever was missed is picked up next time
+		log("Readwise: sync incomplete, keeping existing data and watermark")
+	if not complete and not since:
+		# a partial *full* result would mean dropping the table and refilling it with
+		# a fraction of the library, which is worse than doing nothing
+		log("Readwise: full sync incomplete, leaving the database untouched")
+		db.close()
+		return
+
+	sql_drop = "DROP TABLE IF EXISTS highlights"
 	sql_create = """CREATE TABLE highlights (
 			user_book_id INT,
 			title TEXT,
@@ -376,15 +485,24 @@ def refreshReadwiseDatabase ():
 			high_readwise_url TEXT
 			)
 			"""
-	c = db.cursor()   
-	c.execute(sql_drop)
-	c.execute(sql_create)
-		
-			
+	c = db.cursor()
+	if since is None:
+		c.execute(sql_drop)
+		c.execute(sql_create)
+	elif not _tableExists(db, 'highlights'):
+		c.execute(sql_create)
+	# highID is what INSERT OR REPLACE keys on, so an edited highlight updates its
+	# row in place instead of being appended a second time
+	c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_highlights_highID ON highlights(highID)")
+
+	touchedBooks = set()
+	highlightCount = 0
 	for myBook in full_data:
+		touchedBooks.add(myBook['user_book_id'])
 		for myHigh in myBook['highlights']:
-			
-			c.execute('INSERT INTO highlights VALUES ( ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?,?,?,?,?,?)', 
+			highlightCount += 1
+
+			c.execute('INSERT OR REPLACE INTO highlights VALUES ( ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?,?,?,?,?,?)',
 	     		(myBook['user_book_id'], 
 				myBook['title'],
 				myBook['author'],
@@ -419,9 +537,16 @@ def refreshReadwiseDatabase ():
 	# DISTINCT matters: there is one row per highlight, so without it this loop ran
 	# once per highlight (thousands of times) instead of once per book, and a cover
 	# that failed to download was retried on every one of that book's highlights.
-	select_statement = "SELECT DISTINCT user_book_id, cover_image_url FROM highlights"
-
-	c.execute(select_statement)
+	# On an incremental sync only the books that actually changed are considered.
+	if since is not None and touchedBooks:
+		placeholders = ','.join('?' * len(touchedBooks))
+		c.execute(
+			"SELECT DISTINCT user_book_id, cover_image_url FROM highlights "
+			f"WHERE user_book_id IN ({placeholders})", list(touchedBooks))
+	elif since is not None:
+		c.execute("SELECT DISTINCT user_book_id, cover_image_url FROM highlights WHERE 0")
+	else:
+		c.execute("SELECT DISTINCT user_book_id, cover_image_url FROM highlights")
 
 	rs = c.fetchall()
 
@@ -450,9 +575,18 @@ def refreshReadwiseDatabase ():
 			src = 'icons/supplementals.png'
 			shutil.copy(src, ICON_PATH)
 
-	
-	
+	# Only advance the watermark when every page arrived. It is rewound slightly so a
+	# highlight edited while the sync was running is picked up next time rather than
+	# falling into the gap between "fetched" and "recorded".
+	if complete:
+		watermark = _apiTimestamp(startedAt - timedelta(seconds=_WATERMARK_SAFETY_SECONDS))
+		_setSyncState(db, 'highlights_synced_at', watermark)
+		if since is None:
+			_setSyncState(db, 'highlights_full_synced_at', _apiTimestamp(startedAt))
+	db.commit()
 	db.close()
+	log(f"Readwise: {'full' if since is None else 'incremental'} sync stored "
+	    f"{highlightCount} highlights from {len(touchedBooks)} books")
 
 def makeLabelList():
 	db=sqlite3.connect(MY_DATABASE)	
@@ -495,34 +629,42 @@ def makeLabelList():
             		
 					
 
-def refreshReaderDatabase():
-	full_data = []
-	next_page_cursor = None
-	page = 0
-	while True:
-		page += 1
-		params = {}
-		if next_page_cursor:
-			params['pageCursor'] = next_page_cursor
-		log(f"Reader API: fetching page {page}...")
-
-		response = _apiGet("https://readwise.io/api/v3/list/", params, "Reader API")
-		if response is None:
-			break
-
-		data = response.json()
-		results = data.get('results', [])
-		full_data.extend(results)
-		log(f"Reader API: got {len(results)} docs (total: {len(full_data)})")
-
-		next_page_cursor = data.get('nextPageCursor')
-		if not next_page_cursor:
-			break
-
+def refreshReaderDatabase(full=False):
+	startedAt = _utcNow()
 	db = sqlite3.connect(MY_DATABASE)
+
+	since = None if full else _getSyncState(db, 'reader_synced_at')
+	if since and not _tableExists(db, 'reader_documents'):
+		since = None
+	if since and _fullSyncDue(db, 'reader_full_synced_at'):
+		log(f"Reader: no full sync in {_FULL_RESYNC_DAYS} days, doing one now to catch deletions")
+		since = None
+	# the summary/notes columns were added later; an older table cannot be topped up
+	if since:
+		try:
+			db.execute("SELECT summary, notes FROM reader_documents LIMIT 1")
+		except sqlite3.OperationalError:
+			log("Reader: table predates the summary/notes columns, doing one full rebuild")
+			since = None
+
+	extraParams = {'updatedAfter': since} if since else {}
+	if since:
+		log(f"Reader: incremental sync of changes since {since}")
+	else:
+		log("Reader: full sync")
+
+	full_data, complete = _fetchAllPages(
+		"https://readwise.io/api/v3/list/", "Reader API", extraParams)
+
+	if not complete and not since:
+		log("Reader: full sync incomplete, leaving the database untouched")
+		db.close()
+		return
+
 	c = db.cursor()
-	c.execute("DROP TABLE IF EXISTS reader_documents")
-	c.execute("""CREATE TABLE reader_documents (
+	if since is None:
+		c.execute("DROP TABLE IF EXISTS reader_documents")
+	c.execute("""CREATE TABLE IF NOT EXISTS reader_documents (
 			id TEXT PRIMARY KEY,
 			title TEXT,
 			author TEXT,
@@ -559,9 +701,15 @@ def refreshReaderDatabase():
 			 doc.get('notes', ''),
 			))
 
+	if complete:
+		watermark = _apiTimestamp(startedAt - timedelta(seconds=_WATERMARK_SAFETY_SECONDS))
+		_setSyncState(db, 'reader_synced_at', watermark)
+		if since is None:
+			_setSyncState(db, 'reader_full_synced_at', _apiTimestamp(startedAt))
 	db.commit()
 	db.close()
-	log(f"Reader database refreshed with {len(full_data)} documents")
+	log(f"Reader: {'full' if since is None else 'incremental'} sync stored "
+	    f"{len(full_data)} documents")
 
 
 """
