@@ -68,6 +68,16 @@ def queryItems(database, myInput):
     types = [k for k, v in my_checks.items() if v == '1']
     myTypes = ','.join('?'*len(types))
 
+    def likeParam(term):
+        """Build a LIKE pattern matching `term` anywhere, with wildcards escaped.
+
+        Search terms are user input, so they are always bound as parameters rather
+        than interpolated into the SQL. Escaping % and _ keeps them literal, and
+        the backslash is the ESCAPE character declared on every LIKE below.
+        """
+        escaped = term.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        return f"%{escaped}%"
+
     search_readwise = SEARCH_READWISE
     search_reader = SEARCH_READER
     if '--reader' in myInput:
@@ -99,11 +109,13 @@ def queryItems(database, myInput):
     fullTags = [s.strip() for s in fullTags]
 
     tag_sql = ""
+    tag_params = []
     for currTag  in fullTags:
         if currTag.strip() in tagList: #if it is a real tag
             mySearchInput = re.sub(currTag, '', mySearchInput).strip()
             currTag = currTag[1:].strip()
-            tag_sql = f"{tag_sql} AND highTags LIKE '%{currTag}%'"
+            tag_sql = f"{tag_sql} AND highTags LIKE ? ESCAPE '\\'"
+            tag_params.append(likeParam(currTag))
 
 
     # check if the user is trying to enter a tag (only for Readwise mode)
@@ -150,11 +162,13 @@ def queryItems(database, myInput):
                 rw_columns = ["highText"]
 
             keywords = mySearchInput.split()
+            kw_params = []
             if keywords:
                 kw_clauses = []
                 for kw in keywords:
-                    col_matches = [f"{col} LIKE '%{kw}%'" for col in rw_columns]
+                    col_matches = [f"{col} LIKE ? ESCAPE '\\'" for col in rw_columns]
                     kw_clauses.append(f"({' OR '.join(col_matches)})")
+                    kw_params.extend([likeParam(kw)] * len(rw_columns))
                 conditions_str = " AND ".join(kw_clauses)
             else:
                 conditions_str = "1=1"
@@ -162,7 +176,8 @@ def queryItems(database, myInput):
             sql = f"SELECT * FROM highlights WHERE ({conditions_str}) and category IN ({myTypes}) {tag_sql}"
             log (sql)
 
-            rs = db.execute(sql, types).fetchall()
+            # parameter order must follow the placeholders: keywords, then categories, then tags
+            rs = db.execute(sql, kw_params + types + tag_params).fetchall()
             totCount = len(rs)
 
             for r in rs:
@@ -214,11 +229,13 @@ def queryItems(database, myInput):
                 reader_columns = ["title"]
 
             keywords = mySearchInput.split()
+            reader_params = []
             if keywords:
                 kw_clauses = []
                 for kw in keywords:
-                    col_matches = [f"{col} LIKE '%{kw}%'" for col in reader_columns]
+                    col_matches = [f"{col} LIKE ? ESCAPE '\\'" for col in reader_columns]
                     kw_clauses.append(f"({' OR '.join(col_matches)})")
+                    reader_params.extend([likeParam(kw)] * len(reader_columns))
                 reader_conditions = " AND ".join(kw_clauses)
             else:
                 reader_conditions = "1=1"
@@ -227,7 +244,7 @@ def queryItems(database, myInput):
             log(reader_sql)
 
             try:
-                reader_rs = db.execute(reader_sql).fetchall()
+                reader_rs = db.execute(reader_sql, reader_params).fetchall()
             except Exception as e:
                 log(f"Reader query failed (table may not exist yet): {e}")
                 reader_rs = []

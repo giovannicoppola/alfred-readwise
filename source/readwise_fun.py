@@ -225,7 +225,7 @@ def refreshReadwiseDatabase ():
 			response = requests.get(
 				url="https://readwise.io/api/v2/export/",
 				params=params,
-				headers={"Authorization": f"Token {TOKEN}"}, verify=False,
+				headers={"Authorization": f"Token {TOKEN}"},
 				timeout=30
 			)
 		except requests.exceptions.RequestException as e:
@@ -401,7 +401,7 @@ def refreshReaderDatabase():
 			response = requests.get(
 				url="https://readwise.io/api/v3/list/",
 				params=params,
-				headers={"Authorization": f"Token {TOKEN}"}, verify=False,
+				headers={"Authorization": f"Token {TOKEN}"},
 				timeout=30
 			)
 		except requests.exceptions.RequestException as e:
