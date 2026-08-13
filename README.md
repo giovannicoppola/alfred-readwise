@@ -103,7 +103,7 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 
 <h1 id="changelog">Changelog 🧰</h1>
 
-### New in version 0.5
+### New in version 0.4
 - Refreshes now sync only what changed instead of downloading everything each time, so a refresh that took minutes takes under a second. `readwise:rebuild` still does a full rebuild, and one runs automatically every 30 days to catch deletions
 - Fixed a refresh that could never finish: hitting the Readwise rate limit retried forever, and because the search rebuilds a missing Reader table on every keystroke, each keystroke started another sync that rate-limited the others
 - Searching for a word containing an apostrophe no longer fails, and TLS certificate verification is enabled again on both APIs
