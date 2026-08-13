@@ -299,8 +299,8 @@
 				<string># Opens the Readwise/Reader page for the selected item.
 #
 # Highlights are the common case and are never diverted: only read.readwise.io
-# URLs are considered here, so a highlight's readwise.io/open/... link goes
-# straight to the default browser exactly as before.
+# URLs are considered, so a highlight's readwise.io/open/... link goes straight
+# to the default browser exactly as before.
 url="$myURL"
 [ -n "$url" ] || exit 0
 
@@ -311,30 +311,40 @@ esac
 
 [ "$READER_OPEN_IN" = "App" ] || { open "$url"; exit 0; }
 
-# The Reader "app" is a browser-installed web app. Passing a URL to it with
-# `open -a` does not work: the app-mode loader ignores the argument and just
-# shows its start page. Opening the owning browser with --app=&lt;url&gt; is what
-# actually lands on the document.
+# The Reader "app" is a browser-installed web app. Handing it a URL does not
+# work -- `open -a Reader &lt;url&gt;` and `open -b &lt;its bundle id&gt; &lt;url&gt;` both just
+# show its start page. What does land on the document is asking the browser
+# that installed it to open an app window at that URL.
 readerApp=$(mdfind "kMDItemFSName == 'Reader.app' || kMDItemFSName == 'Readwise Reader.app'" 2&gt;/dev/null | head -1)
 if [ -n "$readerApp" ]; then
   bundleID=$(defaults read "$readerApp/Contents/Info" CFBundleIdentifier 2&gt;/dev/null)
   case "$bundleID" in
-    com.brave.Browser.app.*)     browser="Brave Browser" ;;
-    com.google.Chrome.app.*)     browser="Google Chrome" ;;
-    com.google.Chrome.beta.app.*) browser="Google Chrome Beta" ;;
-    com.microsoft.edgemac.app.*) browser="Microsoft Edge" ;;
-    com.vivaldi.Vivaldi.app.*)   browser="Vivaldi" ;;
+    com.brave.Browser.app.*)       browser="Brave Browser" ;;
+    com.google.Chrome.app.*)       browser="Google Chrome" ;;
+    com.google.Chrome.beta.app.*)  browser="Google Chrome Beta" ;;
+    com.microsoft.edgemac.app.*)   browser="Microsoft Edge" ;;
+    com.vivaldi.Vivaldi.app.*)     browser="Vivaldi" ;;
     com.operasoftware.Opera.app.*) browser="Opera" ;;
-    com.apple.Safari.WebApp.*)   browser="" ;;   # Safari web apps: see below
-    *)                           browser="" ;;
+    *)                             browser="" ;;
   esac
-  if [ -n "$browser" ] &amp;&amp; open -na "$browser" --args --app="$url"; then
-    exit 0
+
+  if [ -n "$browser" ]; then
+    browserPath="/Applications/$browser.app"
+    [ -d "$browserPath" ] || browserPath=$(mdfind "kMDItemFSName == '$browser.app'" 2&gt;/dev/null | head -1)
+    if [ -d "$browserPath" ]; then
+      exe=$(defaults read "$browserPath/Contents/Info" CFBundleExecutable 2&gt;/dev/null)
+      # calling the binary directly forwards to an already running instance,
+      # which `open -n` does not reliably do
+      if [ -n "$exe" ] &amp;&amp; [ -x "$browserPath/Contents/MacOS/$exe" ]; then
+        "$browserPath/Contents/MacOS/$exe" --app="$url" &gt;/dev/null 2&gt;&amp;1 &amp;
+        exit 0
+      fi
+    fi
+    open -na "$browser" --args --app="$url" &amp;&amp; exit 0
   fi
-  # Safari web apps (and anything unrecognised) do accept a URL directly
-  if [ -n "$bundleID" ] &amp;&amp; open -b "$bundleID" "$url" 2&gt;/dev/null; then
-    exit 0
-  fi
+
+  # unrecognised host browser (e.g. a Safari web app): let it try the URL itself
+  [ -n "$bundleID" ] &amp;&amp; open -b "$bundleID" "$url" 2&gt;/dev/null &amp;&amp; exit 0
 fi
 
 # no Reader app installed, or it could not be targeted
