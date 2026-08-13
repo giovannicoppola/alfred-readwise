@@ -103,8 +103,12 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 
 <h1 id="changelog">Changelog 🧰</h1>
 
-### New in version 0.4
-- Highlights created via Alfred are now immediately saved to the local database, so they appear in search results without requiring a full database refresh
+### New in version 0.5
+- Refreshes now sync only what changed instead of downloading everything each time, so a refresh that took minutes takes under a second. `readwise:rebuild` still does a full rebuild, and one runs automatically every 30 days to catch deletions
+- Fixed a refresh that could never finish: hitting the Readwise rate limit retried forever, and because the search rebuilds a missing Reader table on every keystroke, each keystroke started another sync that rate-limited the others
+- Searching for a word containing an apostrophe no longer fails, and TLS certificate verification is enabled again on both APIs
+- Highlights created via Alfred are now stored correctly and are immediately searchable — previously the saved row had no text and could never be found
+- Books with no cover art show the workflow icon instead of a blank placeholder image
 - New `SEARCH_PLATFORM` setting: choose to search **Readwise** (default), **Reader**, or **Both**
 - On a Reader document, `ctrl-enter` opens the Reader page and `cmd-enter` opens the original article — the same way `cmd-enter` opens the source of a highlight
 - New `Open Reader documents in` setting: `Browser` (default) or `Reader app`. It controls where `ctrl-enter` opens a Reader page, and only matters when Reader documents are in your results. If the Reader app isn't installed it falls back to the browser
