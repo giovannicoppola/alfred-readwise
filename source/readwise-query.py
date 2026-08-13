@@ -14,7 +14,7 @@ import re
 import contextlib
 
 
-from config import TOKEN, ARTICLES_CHECK,BOOKS_CHECK, TWEETS_CHECK, PODCASTS_CHECK, SUPPLEMENTALS_CHECK, log, MY_DATABASE, RefRate, IMAGE_FOLDER, IMAGE_H_FOLDER, SEARCH_SCOPE, SEARCH_PLATFORM
+from config import TOKEN, ARTICLES_CHECK,BOOKS_CHECK, TWEETS_CHECK, PODCASTS_CHECK, SUPPLEMENTALS_CHECK, log, MY_DATABASE, RefRate, IMAGE_FOLDER, IMAGE_H_FOLDER, SEARCH_SCOPE, SEARCH_PLATFORM, READER_OPEN_IN
 from readwise_fun import refreshReadwiseDatabase, makeLabelList, refreshReaderDatabase, rebuildLock, inCooldown, startCooldown, clearCooldown
 MYINPUT = sys.argv[1].casefold()
 my_checks = {'books': BOOKS_CHECK, 'articles': ARTICLES_CHECK, 'tweets': TWEETS_CHECK, 'podcasts': PODCASTS_CHECK, 'supplementals': SUPPLEMENTALS_CHECK}
@@ -304,8 +304,18 @@ def queryItems(database, myInput):
                 if r['category']:
                     subtitle += f" [{r['category']}]"
 
-                openURL = r['source_url'] or r['url'] or ''
-                urlText = "open in browser" if openURL else "no URL"
+                # ctrl-Enter opens the Reader page itself (browser or Reader app, per
+                # the READER_OPEN_IN setting); cmd-Enter opens the original article,
+                # which matches what cmd-Enter already does on a highlight.
+                readerURL = r['url'] or ''
+                sourceURL = r['source_url'] or ''
+                if not readerURL:
+                    readerText = "no Reader page"
+                elif READER_OPEN_IN == 'App':
+                    readerText = "open in the Reader app"
+                else:
+                    readerText = "open in browser"
+                sourceText = "open source URL" if sourceURL else "no source URL"
 
                 title = r['title'] or '(no title)'
                 fullParts = [f"## {title}"]
@@ -327,14 +337,18 @@ def queryItems(database, myInput):
                     'valid': True,
                     'variables': {
                         "fullOutput": fullOutput,
-                        "myURL": r['url'] or '',
+                        "myURL": readerURL,
                         "myStatus": 'completed',
                     },
                     "mods": {
                         "ctrl": {
-                            "valid": 'true',
-                            "subtitle": urlText,
-                            "arg": openURL
+                            "valid": bool(readerURL),
+                            "subtitle": readerText
+                        },
+                        "command": {
+                            "valid": bool(sourceURL),
+                            "subtitle": sourceText,
+                            "arg": sourceURL
                         }},
                     'arg': ''
                         })

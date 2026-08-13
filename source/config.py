@@ -23,6 +23,10 @@ SUPPLEMENTALS_CHECK = os.getenv('SUPPLEMENTALS_CHECK')
 NEW_HIGH_TITLE = os.getenv('NEW_HIGH_TITLE')
 SEARCH_SCOPE = os.getenv('SEARCH_SCOPE', 'Main')
 SEARCH_PLATFORM = os.getenv('SEARCH_PLATFORM', 'Readwise highlights')
+# Where ctrl-Enter opens a Reader document: 'Browser' or 'App'. Only meaningful when
+# Reader documents are in the results; the actual opening happens in the workflow's
+# ctrl action, this is used to label the item.
+READER_OPEN_IN = os.getenv('READER_OPEN_IN') or 'Browser'
 
 WF_BUNDLE = os.getenv('alfred_workflow_bundleid')
 DATA_FOLDER = os.getenv('alfred_workflow_data')

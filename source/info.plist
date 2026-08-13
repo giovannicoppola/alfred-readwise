@@ -291,23 +291,40 @@
 		<dict>
 			<key>config</key>
 			<dict>
-				<key>browser</key>
-				<string></string>
-				<key>skipqueryencode</key>
+				<key>concurrently</key>
 				<false/>
-				<key>skipvarencode</key>
-				<false/>
-				<key>spaces</key>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>script</key>
+				<string># Opens the Readwise/Reader page for the selected item.
+# Highlights always open in the browser; a Reader document honours READER_OPEN_IN.
+url="$myURL"
+[ -n "$url" ] || exit 0
+
+case "$url" in
+  https://read.readwise.io/*)
+    if [ "$READER_OPEN_IN" = "App" ]; then
+      # fall back to the browser if the app is not installed
+      open -a "Reader" "$url" 2&gt;/dev/null || open "$url"
+      exit 0
+    fi
+    ;;
+esac
+open "$url"
+</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
 				<string></string>
-				<key>url</key>
-				<string>{var:myURL}</string>
+				<key>type</key>
+				<integer>0</integer>
 			</dict>
 			<key>type</key>
-			<string>alfred.workflow.action.openurl</string>
+			<string>alfred.workflow.action.script</string>
 			<key>uid</key>
 			<string>3BA3AB51-3B00-430F-8575-297174A2BF86</string>
 			<key>version</key>
-			<integer>1</integer>
+			<integer>2</integer>
 		</dict>
 		<dict>
 			<key>config</key>
@@ -1092,6 +1109,32 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 			<string>popupbutton</string>
 			<key>variable</key>
 			<string>SEARCH_SCOPE</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string>Browser</string>
+				<key>pairs</key>
+				<array>
+					<array>
+						<string>Browser</string>
+						<string>Browser</string>
+					</array>
+					<array>
+						<string>Reader app</string>
+						<string>App</string>
+					</array>
+				</array>
+			</dict>
+			<key>description</key>
+			<string>Where ctrl-Enter opens a Readwise Reader document. Only has an effect when Reader documents are included in the results (see Search platform). 'Reader app' needs the Reader app installed; it falls back to the browser.</string>
+			<key>label</key>
+			<string>Open Reader documents in</string>
+			<key>type</key>
+			<string>popupbutton</string>
+			<key>variable</key>
+			<string>READER_OPEN_IN</string>
 		</dict>
 		<dict>
 			<key>config</key>

@@ -103,9 +103,11 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 
 ### New in version 0.4
 - Highlights created via Alfred are now immediately saved to the local database, so they appear in search results without requiring a full database refresh
-- New `SEARCH_PLATFORM` setting: choose to search **Readwise** (default), **Reader**, or **Both**. Reader results show document titles; `ctrl-enter` opens the URL in your browser
+- New `SEARCH_PLATFORM` setting: choose to search **Readwise** (default), **Reader**, or **Both**
+- On a Reader document, `ctrl-enter` opens the Reader page and `cmd-enter` opens the original article — the same way `cmd-enter` opens the source of a highlight
+- New `Open Reader documents in` setting: `Browser` (default) or `Reader app`. It controls where `ctrl-enter` opens a Reader page, and only matters when Reader documents are in your results. If the Reader app isn't installed it falls back to the browser
 - Inline search filters: type `--reader` or `--readwise` anywhere in your query to restrict results to that platform, regardless of the `SEARCH_PLATFORM` setting
-- New `SEARCH_SCOPE` setting: `Main` (default) searches primary content only (highlight text for Readwise, document title for Reader); `All` includes metadata (author, book title, site name)
+- Reader documents are always searched by title, author and site name; the `SEARCH_SCOPE` setting applies to highlights only
 - Reader results now include summary and notes in the text view output
 - Improved QuickLook highlight previews with better typography and layout
 - API error handling with rate-limit retry and timeouts
