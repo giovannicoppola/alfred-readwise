@@ -315,22 +315,29 @@ esac
 # `open -a` does not work: the app-mode loader ignores the argument and just
 # shows its start page. Opening the owning browser with --app=&lt;url&gt; is what
 # actually lands on the document.
-readerApp=$(mdfind "kMDItemFSName == 'Reader.app'" 2&gt;/dev/null | head -1)
+readerApp=$(mdfind "kMDItemFSName == 'Reader.app' || kMDItemFSName == 'Readwise Reader.app'" 2&gt;/dev/null | head -1)
 if [ -n "$readerApp" ]; then
   bundleID=$(defaults read "$readerApp/Contents/Info" CFBundleIdentifier 2&gt;/dev/null)
   case "$bundleID" in
     com.brave.Browser.app.*)     browser="Brave Browser" ;;
     com.google.Chrome.app.*)     browser="Google Chrome" ;;
+    com.google.Chrome.beta.app.*) browser="Google Chrome Beta" ;;
     com.microsoft.edgemac.app.*) browser="Microsoft Edge" ;;
     com.vivaldi.Vivaldi.app.*)   browser="Vivaldi" ;;
+    com.operasoftware.Opera.app.*) browser="Opera" ;;
+    com.apple.Safari.WebApp.*)   browser="" ;;   # Safari web apps: see below
     *)                           browser="" ;;
   esac
   if [ -n "$browser" ] &amp;&amp; open -na "$browser" --args --app="$url"; then
     exit 0
   fi
+  # Safari web apps (and anything unrecognised) do accept a URL directly
+  if [ -n "$bundleID" ] &amp;&amp; open -b "$bundleID" "$url" 2&gt;/dev/null; then
+    exit 0
+  fi
 fi
 
-# no Reader app installed, or an unrecognised host browser
+# no Reader app installed, or it could not be targeted
 open "$url"
 </string>
 				<key>scriptargtype</key>
@@ -344,6 +351,30 @@ open "$url"
 			<string>alfred.workflow.action.script</string>
 			<key>uid</key>
 			<string>3BA3AB51-3B00-430F-8575-297174A2BF86</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>script</key>
+				<string>export PYTHONPATH="$PWD/lib"
+/usr/bin/python3 readwise_post.py "$1"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>type</key>
+				<integer>0</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>8E887995-44A7-443C-B49C-E560F3057907</string>
 			<key>version</key>
 			<integer>2</integer>
 		</dict>
@@ -388,30 +419,6 @@ open "$url"
 			<string>E6EBFFF6-0A4B-4F13-B835-7E60BE6999CB</string>
 			<key>version</key>
 			<integer>1</integer>
-		</dict>
-		<dict>
-			<key>config</key>
-			<dict>
-				<key>concurrently</key>
-				<false/>
-				<key>escaping</key>
-				<integer>102</integer>
-				<key>script</key>
-				<string>export PYTHONPATH="$PWD/lib"
-/usr/bin/python3 readwise_post.py "$1"</string>
-				<key>scriptargtype</key>
-				<integer>1</integer>
-				<key>scriptfile</key>
-				<string></string>
-				<key>type</key>
-				<integer>0</integer>
-			</dict>
-			<key>type</key>
-			<string>alfred.workflow.action.script</string>
-			<key>uid</key>
-			<string>8E887995-44A7-443C-B49C-E560F3057907</string>
-			<key>version</key>
-			<integer>2</integer>
 		</dict>
 		<dict>
 			<key>config</key>
@@ -557,23 +564,6 @@ open "$url"
 		<dict>
 			<key>config</key>
 			<dict>
-				<key>argument</key>
-				<string>{var:fullOutput}</string>
-				<key>passthroughargument</key>
-				<false/>
-				<key>variables</key>
-				<dict/>
-			</dict>
-			<key>type</key>
-			<string>alfred.workflow.utility.argument</string>
-			<key>uid</key>
-			<string>D7A1F3E2-94B6-4C08-A5D9-3E7F12AB56CD</string>
-			<key>version</key>
-			<integer>1</integer>
-		</dict>
-		<dict>
-			<key>config</key>
-			<dict>
 				<key>conditions</key>
 				<array>
 					<dict>
@@ -600,6 +590,23 @@ open "$url"
 			<string>alfred.workflow.utility.conditional</string>
 			<key>uid</key>
 			<string>EC7ED109-7D3E-4ECF-986A-043151DB7901</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argument</key>
+				<string>{var:fullOutput}</string>
+				<key>passthroughargument</key>
+				<false/>
+				<key>variables</key>
+				<dict/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.argument</string>
+			<key>uid</key>
+			<string>D7A1F3E2-94B6-4C08-A5D9-3E7F12AB56CD</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
@@ -710,6 +717,57 @@ open "$url"
 			<string>56834D1D-55F4-4D51-B8E7-A128C0049C6B</string>
 			<key>version</key>
 			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>alfredfiltersresultsmatchmode</key>
+				<integer>0</integer>
+				<key>argumenttreatemptyqueryasnil</key>
+				<true/>
+				<key>argumenttrimmode</key>
+				<integer>0</integer>
+				<key>argumenttype</key>
+				<integer>2</integer>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>keyword</key>
+				<string>{var:fullrebuildkeyword}</string>
+				<key>queuedelaycustom</key>
+				<integer>3</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<true/>
+				<key>queuedelaymode</key>
+				<integer>0</integer>
+				<key>queuemode</key>
+				<integer>1</integer>
+				<key>runningsubtext</key>
+				<string>please wait, rebuilding from scratch... ⏳</string>
+				<key>script</key>
+				<string>export PYTHONPATH="$PWD/lib"
+/usr/bin/python3 readwise-rebuild.py full
+</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>subtext</key>
+				<string>downloads everything again; also removes deleted highlights</string>
+				<key>title</key>
+				<string>full rebuild of Readwise database 🔄</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>E3512DF6-3247-46DD-A93E-0CF42BC3F2F7</string>
+			<key>version</key>
+			<integer>3</integer>
 		</dict>
 	</array>
 	<key>readme</key>
@@ -874,6 +932,13 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 			<key>ypos</key>
 			<real>760.0</real>
 		</dict>
+		<key>E3512DF6-3247-46DD-A93E-0CF42BC3F2F7</key>
+		<dict>
+			<key>xpos</key>
+			<real>1025.0</real>
+			<key>ypos</key>
+			<real>220.0</real>
+		</dict>
 		<key>E6EBFFF6-0A4B-4F13-B835-7E60BE6999CB</key>
 		<dict>
 			<key>xpos</key>
@@ -891,9 +956,9 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 		<key>EC7ED109-7D3E-4ECF-986A-043151DB7901</key>
 		<dict>
 			<key>xpos</key>
-			<real>500.0</real>
+			<real>490.0</real>
 			<key>ypos</key>
-			<real>565.0</real>
+			<real>550.0</real>
 		</dict>
 		<key>F4F8B71F-C0EB-4675-9CAF-424BBAE41A4E</key>
 		<dict>
@@ -946,6 +1011,27 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 			<string>textfield</string>
 			<key>variable</key>
 			<string>refreshkeyword</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string>readwise:rebuild</string>
+				<key>placeholder</key>
+				<string></string>
+				<key>required</key>
+				<false/>
+				<key>trim</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string>Rebuilds the database from scratch instead of syncing only what changed. Slower, but it is the only way to drop highlights you deleted in Readwise. Runs automatically every 30 days.</string>
+			<key>label</key>
+			<string>Full rebuild keyword</string>
+			<key>type</key>
+			<string>textfield</string>
+			<key>variable</key>
+			<string>fullrebuildkeyword</string>
 		</dict>
 		<dict>
 			<key>config</key>
@@ -1189,7 +1275,7 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 		</dict>
 	</array>
 	<key>version</key>
-	<string>0.4</string>
+	<string>0.5</string>
 	<key>webaddress</key>
 	<string>https://github.com/giovannicoppola/alfred-readwise</string>
 </dict>
