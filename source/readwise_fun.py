@@ -14,6 +14,7 @@ import sqlite3
 import os
 import re
 import shutil
+import filecmp
 import contextlib
 import requests
 import urllib.request
@@ -220,6 +221,30 @@ _MAX_RETRY_WAIT = 120
 
 # cover-image downloads must never block the rebuild forever
 _COVER_TIMEOUT = 20
+
+# Some books have no cover art, and instead of omitting the URL both Readwise and
+# Amazon hand back a placeholder image. Downloading those produces a tiny blank or
+# generic tile that looks like a failed download, so recognise them and use the
+# workflow's own icon instead. Matched on the URL, which is stable and explicit.
+_LOCAL_COVER = 'icons/supplementals.png'
+_PLACEHOLDER_COVER_MARKERS = (
+	'static/images/default-book-icon',   # Readwise's generic book icon
+	'01RmK+J4pJL',                       # Amazon's blank-image placeholder
+)
+
+
+def _isPlaceholderCover(url):
+	return bool(url) and any(marker in url for marker in _PLACEHOLDER_COVER_MARKERS)
+
+
+def _useLocalCover(iconPath):
+	"""Put the workflow's own icon at iconPath, unless it is already there."""
+	try:
+		if os.path.exists(iconPath) and filecmp.cmp(_LOCAL_COVER, iconPath, shallow=False):
+			return
+		shutil.copy(_LOCAL_COVER, iconPath)
+	except OSError as e:
+		log(f"could not apply the fallback cover to {iconPath}: {e}")
 
 # ---------------------------------------------------------------------------
 # Rebuild lock
@@ -552,28 +577,43 @@ def refreshReadwiseDatabase (full=False):
 
 	for rec in rs:
 		ICON_PATH = f'{IMAGE_FOLDER}{rec[0]}.jpg'
-		if rec[1]:
-			if not os.path.exists(ICON_PATH):
-				log ("retrieving image" + ICON_PATH)
-				try:
-					# an explicit timeout is essential: urlretrieve otherwise inherits
-					# the default socket timeout of None and one unresponsive cover
-					# host blocks the whole rebuild indefinitely
-					with contextlib.closing(urllib.request.urlopen(rec[1], timeout=_COVER_TIMEOUT)) as resp, \
-					     open(ICON_PATH, 'wb') as out:
-						shutil.copyfileobj(resp, out)
-				except Exception as e:
-					# catch broadly: timeouts, SSL errors and malformed URLs are not
-					# all URLError, and one bad cover must not abort the rebuild
-					log(f"Failed to download file: {e}")
-					if os.path.exists(ICON_PATH):
-						os.remove(ICON_PATH)
-					src = 'icons/supplementals.png'
-					shutil.copy(src, ICON_PATH)
+		# no cover, or a known placeholder standing in for one: use our own icon and
+		# do not spend a request fetching an image we would only throw away
+		if not rec[1] or _isPlaceholderCover(rec[1]):
+			_useLocalCover(ICON_PATH)
+		elif not os.path.exists(ICON_PATH):
+			log ("retrieving image" + ICON_PATH)
+			try:
+				# an explicit timeout is essential: urlretrieve otherwise inherits
+				# the default socket timeout of None and one unresponsive cover
+				# host blocks the whole rebuild indefinitely
+				with contextlib.closing(urllib.request.urlopen(rec[1], timeout=_COVER_TIMEOUT)) as resp, \
+				     open(ICON_PATH, 'wb') as out:
+					shutil.copyfileobj(resp, out)
+			except Exception as e:
+				# catch broadly: timeouts, SSL errors and malformed URLs are not
+				# all URLError, and one bad cover must not abort the rebuild
+				log(f"Failed to download file: {e}")
+				if os.path.exists(ICON_PATH):
+					os.remove(ICON_PATH)
+				_useLocalCover(ICON_PATH)
 
-		else:
-			src = 'icons/supplementals.png'
-			shutil.copy(src, ICON_PATH)
+	# Placeholder covers downloaded by earlier versions are already on disk, and an
+	# incremental sync only looks at the books it touched, so sweep every book with a
+	# placeholder URL. No network involved: it is one query plus a byte comparison.
+	c.execute(
+		"SELECT DISTINCT user_book_id, cover_image_url FROM highlights "
+		"WHERE cover_image_url IS NOT NULL AND cover_image_url != ''")
+	replaced = 0
+	for bookID, url in c.fetchall():
+		if not _isPlaceholderCover(url):
+			continue
+		iconPath = f'{IMAGE_FOLDER}{bookID}.jpg'
+		if not (os.path.exists(iconPath) and filecmp.cmp(_LOCAL_COVER, iconPath, shallow=False)):
+			_useLocalCover(iconPath)
+			replaced += 1
+	if replaced:
+		log(f"replaced {replaced} placeholder cover(s) with the workflow icon")
 
 	# Only advance the watermark when every page arrived. It is rewound slightly so a
 	# highlight edited while the sync was running is picked up next time rather than
