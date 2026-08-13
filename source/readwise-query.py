@@ -307,7 +307,11 @@ def queryItems(database, myInput):
                 # ctrl-Enter opens the Reader page itself (browser or Reader app, per
                 # the READER_OPEN_IN setting); cmd-Enter opens the original article,
                 # which matches what cmd-Enter already does on a highlight.
-                readerURL = r['url'] or ''
+                # The API's `url` is https://read.readwise.io/read/<id>, but the Reader
+                # web app lives under /new/read/<id> -- the bare /read/ form is outside
+                # the installed app's scope, so it opens the app at its start page
+                # instead of the document. Build the working URL from the id.
+                readerURL = f"https://read.readwise.io/new/read/{r['id']}" if r['id'] else (r['url'] or '')
                 sourceURL = r['source_url'] or ''
                 if not readerURL:
                     readerText = "no Reader page"
