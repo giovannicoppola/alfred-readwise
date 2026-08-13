@@ -104,19 +104,28 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 <h1 id="changelog">Changelog 🧰</h1>
 
 ### New in version 0.4
-- Refreshes now sync only what changed instead of downloading everything each time, so a refresh that took minutes takes under a second. `readwise:rebuild` still does a full rebuild, and one runs automatically every 30 days to catch deletions
-- Fixed a refresh that could never finish: hitting the Readwise rate limit retried forever, and because the search rebuilds a missing Reader table on every keystroke, each keystroke started another sync that rate-limited the others
-- Searching for a word containing an apostrophe no longer fails, and TLS certificate verification is enabled again on both APIs
-- Highlights created via Alfred are now stored correctly and are immediately searchable — previously the saved row had no text and could never be found
-- Books with no cover art show the workflow icon instead of a blank placeholder image
-- New `SEARCH_PLATFORM` setting: choose to search **Readwise** (default), **Reader**, or **Both**
-- On a Reader document, `ctrl-enter` opens the Reader page and `cmd-enter` opens the original article — the same way `cmd-enter` opens the source of a highlight
-- New `Open Reader documents in` setting: `Browser` (default) or `Reader app`. It controls where `ctrl-enter` opens a Reader page, and only matters when Reader documents are in your results. If the Reader app isn't installed it falls back to the browser
-- Inline search filters: type `--reader` or `--readwise` anywhere in your query to restrict results to that platform, regardless of the `SEARCH_PLATFORM` setting
-- Reader documents are always searched by title, author and site name; the `SEARCH_SCOPE` setting applies to highlights only
-- Reader results now include summary and notes in the text view output
-- Improved QuickLook highlight previews with better typography and layout
-- API error handling with rate-limit retry and timeouts
+
+**Readwise Reader support** 📖
+- New `Search Platform` setting: search **Readwise highlights** (default), **Readwise Reader**, or both
+- Type `--reader` or `--readwise` anywhere in a query to restrict results to one platform, whatever the setting says
+- Reader documents are matched on title, author and site name. `SEARCH_SCOPE` now applies to highlights only
+- On a Reader document, <kbd>^</kbd><kbd>↩</kbd> opens the document in Reader and <kbd>⌘</kbd><kbd>↩</kbd> opens the original article — the same way <kbd>⌘</kbd><kbd>↩</kbd> opens the source of a highlight
+- New `Open Reader documents in` setting: `Browser` (default) or `Reader app`. Only relevant when Reader documents are in your results, and it falls back to the browser if the app isn't installed
+- Reader results include the summary and notes in the text view
+
+**Much faster refreshes** ⚡
+- A refresh now syncs only what changed instead of downloading your whole library each time. On a library of ~5,800 highlights and ~4,700 Reader documents this took a refresh from **2m05s to under a second**
+- New `readwise:rebuild` keyword for a from-scratch rebuild, which is the only way to drop highlights deleted in Readwise. It also runs automatically every 30 days
+
+**Fixes** 🕷️
+- A refresh could never finish: hitting Readwise's rate limit retried forever, and because the search rebuilt a missing Reader table on every keystroke, each keystroke started another sync that rate-limited the others
+- Searching for a word containing an apostrophe failed instead of returning results
+- TLS certificate verification is enabled again on both API calls
+- Highlights created from Alfred were saved without their text, so they could never be found; they are now searchable straight away, with a QuickLook preview
+- A missing `PIL`/Pillow module no longer stops the workflow — previews are simply disabled
+- Books with no cover art show the workflow icon instead of a blank placeholder
+- A blank refresh-rate field no longer crashes every script on startup
+- Improved QuickLook highlight previews, and API error handling with rate-limit retry and timeouts
 
 - 04-04-2023: version 0.1
 
