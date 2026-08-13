@@ -14,7 +14,7 @@ import re
 
 
 from config import TOKEN, ARTICLES_CHECK,BOOKS_CHECK, TWEETS_CHECK, PODCASTS_CHECK, SUPPLEMENTALS_CHECK, log, MY_DATABASE, RefRate, IMAGE_FOLDER, IMAGE_H_FOLDER, SEARCH_SCOPE, SEARCH_PLATFORM
-from readwise_fun import refreshReadwiseDatabase, makeLabelList, refreshReaderDatabase
+from readwise_fun import refreshReadwiseDatabase, makeLabelList, refreshReaderDatabase, rebuildLock, inCooldown, startCooldown, clearCooldown
 MYINPUT = sys.argv[1].casefold()
 my_checks = {'books': BOOKS_CHECK, 'articles': ARTICLES_CHECK, 'tweets': TWEETS_CHECK, 'podcasts': PODCASTS_CHECK, 'supplementals': SUPPLEMENTALS_CHECK}
 
@@ -32,12 +32,33 @@ def refreshAll():
     if SEARCH_READER:
         refreshReaderDatabase()
 
+def guardedRefresh(what, fn):
+    """Run a refresh only if no other one is in progress and we are not cooling down.
+
+    This runs from the script filter, i.e. on every keystroke, so it must never
+    start a second concurrent sync and must back off after a failure rather than
+    retrying on the next character typed.
+    """
+    if inCooldown():
+        log(f"{what}: skipped, a recent refresh failed (cooling down)")
+        return
+    with rebuildLock() as acquired:
+        if not acquired:
+            log(f"{what}: skipped, another refresh is already running")
+            return
+        try:
+            fn()
+            clearCooldown()
+        except Exception as e:
+            log(f"{what}: failed: {e}")
+            startCooldown()
+
 def checkingTime ():
 ## Checking if the database needs to be built or rebuilt
     timeToday = date.today()
     if not os.path.exists(MY_DATABASE):
         log ("Database missing ... building")
-        refreshAll()
+        guardedRefresh("initial build", refreshAll)
     else:
         # Check if reader_documents table needs to be created or updated
         if SEARCH_READER:
@@ -47,7 +68,7 @@ def checkingTime ():
                 db.close()
             except Exception:
                 log("Reader table missing or outdated ... rebuilding")
-                refreshReaderDatabase()
+                guardedRefresh("Reader table build", refreshReaderDatabase)
 
         databaseTime= (int(os.path.getmtime(MY_DATABASE)))
         dt_obj = datetime.fromtimestamp(databaseTime).date()

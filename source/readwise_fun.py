@@ -14,6 +14,7 @@ import sqlite3
 import os
 import re
 import shutil
+import contextlib
 import requests
 import urllib.request
 from config import MY_DATABASE, TOKEN, log, IMAGE_FOLDER, IMAGE_H_FOLDER, SEARCH_PLATFORM
@@ -209,8 +210,125 @@ def createImage(highText, highAuthor, highTitle, highID):
 
 
 
-def refreshReadwiseDatabase ():
+# Rate-limit handling. A 429 used to be retried forever, so a rebuild that hit the
+# limit never finished and never reported anything -- it just reconnected once a
+# minute until the workflow was killed. Retries are now bounded and the wait is
+# capped, so the rebuild either succeeds or tells you why it stopped.
+_MAX_RATE_LIMIT_RETRIES = 5
+_MAX_RETRY_WAIT = 120
+
+# cover-image downloads must never block the rebuild forever
+_COVER_TIMEOUT = 20
+
+# ---------------------------------------------------------------------------
+# Rebuild lock
+#
+# Refreshes are triggered from two places: the explicit rebuild keyword, and the
+# script filter (which rebuilds when the database is stale or the Reader table is
+# missing). The script filter runs on every keystroke, so a Reader table that fails
+# to build meant every keystroke launched another full API sync. Those copies then
+# rate-limited each other and none could finish. One refresh at a time, and a short
+# cooldown after a failure, keeps that from happening.
+# ---------------------------------------------------------------------------
+_LOCK_PATH = f"{os.path.dirname(MY_DATABASE)}/rebuild.lock"
+_COOLDOWN_PATH = f"{os.path.dirname(MY_DATABASE)}/rebuild.cooldown"
+_COOLDOWN_SECONDS = 600
+
+
+def _lockIsStale():
+	try:
+		with open(_LOCK_PATH) as f:
+			pid = int(f.read().strip())
+	except (OSError, ValueError):
+		return True
+	if pid == os.getpid():
+		return True
+	try:
+		os.kill(pid, 0)          # signal 0 only tests whether the process exists
+	except OSError:
+		return True              # holder died, e.g. Alfred killed the script filter
+	return False
+
+
+def inCooldown():
+	"""True if a refresh failed recently and we should not immediately retry."""
 	import time as _time
+	try:
+		age = _time.time() - os.path.getmtime(_COOLDOWN_PATH)
+	except OSError:
+		return False
+	return age < _COOLDOWN_SECONDS
+
+
+def startCooldown():
+	try:
+		with open(_COOLDOWN_PATH, "w") as f:
+			f.write("")
+	except OSError:
+		pass
+
+
+def clearCooldown():
+	try:
+		os.remove(_COOLDOWN_PATH)
+	except OSError:
+		pass
+
+
+@contextlib.contextmanager
+def rebuildLock():
+	"""Context manager yielding True if this process may refresh, False otherwise."""
+	if os.path.exists(_LOCK_PATH) and not _lockIsStale():
+		yield False
+		return
+	try:
+		with open(_LOCK_PATH, "w") as f:
+			f.write(str(os.getpid()))
+	except OSError:
+		yield True               # can't lock; better to refresh than to block forever
+		return
+	try:
+		yield True
+	finally:
+		try:
+			os.remove(_LOCK_PATH)
+		except OSError:
+			pass
+
+
+def _apiGet(url, params, label):
+	"""GET with bounded 429 retries. Returns a 200 response, or None to stop paging."""
+	import time as _time
+	for attempt in range(1, _MAX_RATE_LIMIT_RETRIES + 1):
+		try:
+			response = requests.get(
+				url=url,
+				params=params,
+				headers={"Authorization": f"Token {TOKEN}"},
+				timeout=30
+			)
+		except requests.exceptions.RequestException as e:
+			log(f"{label}: request failed: {e}")
+			return None
+
+		if response.status_code != 429:
+			if response.status_code != 200:
+				log(f"{label}: error {response.status_code}: {response.text[:200]}")
+				return None
+			return response
+
+		retry_after = min(int(response.headers.get('Retry-After', 60)), _MAX_RETRY_WAIT)
+		if attempt == _MAX_RATE_LIMIT_RETRIES:
+			log(f"{label}: still rate limited after {_MAX_RATE_LIMIT_RETRIES} attempts -- giving up. "
+			    "Wait a few minutes and rebuild again; check no other rebuild is already running.")
+			return None
+		log(f"{label}: rate limited, waiting {retry_after}s "
+		    f"(attempt {attempt}/{_MAX_RATE_LIMIT_RETRIES})...")
+		_time.sleep(retry_after)
+	return None
+
+
+def refreshReadwiseDatabase ():
 	full_data = []
 	next_page_cursor = None
 	page = 0
@@ -221,25 +339,8 @@ def refreshReadwiseDatabase ():
 			params['pageCursor'] = next_page_cursor
 		log(f"Readwise API: fetching page {page}...")
 
-		try:
-			response = requests.get(
-				url="https://readwise.io/api/v2/export/",
-				params=params,
-				headers={"Authorization": f"Token {TOKEN}"},
-				timeout=30
-			)
-		except requests.exceptions.RequestException as e:
-			log(f"Readwise API: request failed: {e}")
-			break
-
-		if response.status_code == 429:
-			retry_after = int(response.headers.get('Retry-After', 60))
-			log(f"Readwise API: rate limited, waiting {retry_after}s...")
-			_time.sleep(retry_after)
-			continue
-
-		if response.status_code != 200:
-			log(f"Readwise API: error {response.status_code}: {response.text[:200]}")
+		response = _apiGet("https://readwise.io/api/v2/export/", params, "Readwise API")
+		if response is None:
 			break
 
 		data = response.json()
@@ -315,28 +416,37 @@ def refreshReadwiseDatabase ():
 	db.commit()
 	
 	#retrieving all the images
-	select_statement = "SELECT user_book_id, cover_image_url FROM highlights"
-	
+	# DISTINCT matters: there is one row per highlight, so without it this loop ran
+	# once per highlight (thousands of times) instead of once per book, and a cover
+	# that failed to download was retried on every one of that book's highlights.
+	select_statement = "SELECT DISTINCT user_book_id, cover_image_url FROM highlights"
+
 	c.execute(select_statement)
 
 	rs = c.fetchall()
-	
+
 	for rec in rs:
+		ICON_PATH = f'{IMAGE_FOLDER}{rec[0]}.jpg'
 		if rec[1]:
-			ICON_PATH = f'{IMAGE_FOLDER}{rec[0]}.jpg'
 			if not os.path.exists(ICON_PATH):
 				log ("retrieving image" + ICON_PATH)
 				try:
-					urllib.request.urlretrieve(rec[1], ICON_PATH)
-				except urllib.error.URLError as e:
-				    # If an exception occurs, print an error message and delete the file if it exists
-					log(f"Failed to download file: {e.reason}")
-					ICON_PATH = f'{IMAGE_FOLDER}{rec[0]}.jpg'
+					# an explicit timeout is essential: urlretrieve otherwise inherits
+					# the default socket timeout of None and one unresponsive cover
+					# host blocks the whole rebuild indefinitely
+					with contextlib.closing(urllib.request.urlopen(rec[1], timeout=_COVER_TIMEOUT)) as resp, \
+					     open(ICON_PATH, 'wb') as out:
+						shutil.copyfileobj(resp, out)
+				except Exception as e:
+					# catch broadly: timeouts, SSL errors and malformed URLs are not
+					# all URLError, and one bad cover must not abort the rebuild
+					log(f"Failed to download file: {e}")
+					if os.path.exists(ICON_PATH):
+						os.remove(ICON_PATH)
 					src = 'icons/supplementals.png'
 					shutil.copy(src, ICON_PATH)
 
 		else:
-			ICON_PATH = f'{IMAGE_FOLDER}{rec[0]}.jpg'
 			src = 'icons/supplementals.png'
 			shutil.copy(src, ICON_PATH)
 
@@ -386,7 +496,6 @@ def makeLabelList():
 					
 
 def refreshReaderDatabase():
-	import time as _time
 	full_data = []
 	next_page_cursor = None
 	page = 0
@@ -397,25 +506,8 @@ def refreshReaderDatabase():
 			params['pageCursor'] = next_page_cursor
 		log(f"Reader API: fetching page {page}...")
 
-		try:
-			response = requests.get(
-				url="https://readwise.io/api/v3/list/",
-				params=params,
-				headers={"Authorization": f"Token {TOKEN}"},
-				timeout=30
-			)
-		except requests.exceptions.RequestException as e:
-			log(f"Reader API: request failed: {e}")
-			break
-
-		if response.status_code == 429:
-			retry_after = int(response.headers.get('Retry-After', 60))
-			log(f"Reader API: rate limited, waiting {retry_after}s...")
-			_time.sleep(retry_after)
-			continue
-
-		if response.status_code != 200:
-			log(f"Reader API: error {response.status_code}: {response.text[:200]}")
+		response = _apiGet("https://readwise.io/api/v3/list/", params, "Reader API")
+		if response is None:
 			break
 
 		data = response.json()

@@ -29,7 +29,21 @@ DATA_FOLDER = os.getenv('alfred_workflow_data')
 MY_DATABASE = f"{DATA_FOLDER}/readwise.db"
 IMAGE_FOLDER = f"{DATA_FOLDER}/images/"
 IMAGE_H_FOLDER = f"{DATA_FOLDER}/images_H/"
-RefRate = int(os.getenv('RefreshRate'))
+
+def _intEnv(name, default):
+    """Read an integer config value, tolerating unset/blank/non-numeric input.
+
+    Alfred always sets the variable, leaving it empty when the field is blank, so
+    the getenv default never fires -- int('') raised and every script died on import.
+    """
+    try:
+        return int(os.getenv(name, '').strip())
+    except (AttributeError, ValueError):
+        return default
+
+
+# days between automatic rebuilds; a value below 1 would refresh on every keystroke
+RefRate = max(_intEnv('RefreshRate', 1), 1)
 
 if not os.path.exists(DATA_FOLDER):
     os.makedirs(DATA_FOLDER)
