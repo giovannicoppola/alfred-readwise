@@ -130,15 +130,16 @@ def queryItems(database, myInput):
         myInput = myInput.replace('--readwise', '').strip()
     log(f"Inline filter: search_readwise={search_readwise}, search_reader={search_reader}")
 
-    # getting list of tags from the database (only relevant for Readwise highlights)
+    # Getting the list of tags. The table now holds Reader labels as well as highlight
+    # tags, so it is loaded whichever platform is being searched -- loading it only for
+    # highlights meant a Reader-only search could not recognise a tag at all.
     tagList = []
-    if search_readwise:
-        try:
-            tag_statement = "SELECT name FROM tags"
-            tag_rows = db.execute(tag_statement).fetchall()
-            tagList = ['#' + row[0] for row in tag_rows]
-        except Exception as e:
-            log(f"Tags query failed: {e}")
+    try:
+        tag_statement = "SELECT name FROM tags"
+        tag_rows = db.execute(tag_statement).fetchall()
+        tagList = ['#' + row[0] for row in tag_rows]
+    except Exception as e:
+        log(f"Tags query failed: {e}")
 
     #initializing JSON output
     result = {"items": [], "variables":{}}
@@ -158,8 +159,9 @@ def queryItems(database, myInput):
             tag_params.append(likeParam(currTag))
 
 
-    # check if the user is trying to enter a tag (only for Readwise mode)
-    MYMATCH = re.search(r'(?:^| )#[^ ]*$', myInput) if search_readwise else None
+    # check if the user is part-way through typing a tag, so the '#' picker can be
+    # offered. Reader labels are in the same list now, so this is not highlights-only.
+    MYMATCH = re.search(r'(?:^| )#[^ ]*$', myInput)
     if (MYMATCH !=None):
 
         MYFLAG = MYMATCH.group(0).lstrip(' ')
@@ -282,7 +284,20 @@ def queryItems(database, myInput):
             else:
                 reader_conditions = "1=1"
 
-            reader_sql = f"SELECT * FROM reader_documents WHERE {reader_conditions} ORDER BY updated_at DESC"
+            # A tag in the query has to filter Reader documents as well. It used to
+            # apply to highlights only, and because the tag text is stripped out of
+            # the search string, "#italy" left the Reader side with no conditions at
+            # all -- so it returned the entire Reader library alongside the two
+            # matching highlights.
+            reader_tag_sql = ""
+            for currTag in fullTags:
+                tagName = currTag.lstrip('#').strip()
+                if tagName in [t.lstrip('#') for t in tagList]:
+                    reader_tag_sql += " AND tags LIKE ? ESCAPE '\\'"
+                    reader_params.append(likeParam(f'"{tagName}"'))
+
+            reader_sql = (f"SELECT * FROM reader_documents WHERE ({reader_conditions})"
+                          f"{reader_tag_sql} ORDER BY updated_at DESC")
             log(reader_sql)
 
             try:

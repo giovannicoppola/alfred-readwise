@@ -9,6 +9,7 @@
 
 
 
+import ast
 import json
 import sqlite3
 import os
@@ -654,26 +655,45 @@ def refreshReadwiseDatabase (full=False):
 	# these functions deliberately do not raise on API errors
 	return complete
 
-def makeLabelList():
-	db=sqlite3.connect(MY_DATABASE)	
-	select_statement = "SELECT highTags FROM highlights"
-	c = db.cursor()   
-	c.execute(select_statement)
+def _parseTagField(raw):
+	"""Return the tag names held in one stored tag field.
 
-	rs = c.fetchall()
-	
-	
-	
-	all_dicts = []
-	for label in rs:
-		myTags = json.loads (label[0].replace("'", '"'))
-		#log (f"===== myTags from table: {myTags}")
-		for Tag in myTags:
-		    #log (f"===== single Tag from table: {Tag}")
-    # Convert dictionary to tuple to make it hashable
-		    all_dicts.append (Tag)
-	
-	unique_names = list(set(d['name'] for d in all_dicts))
+	Two shapes are stored. Highlights keep a Python repr of a list of dicts,
+	[{'id': 1, 'name': 'italy'}]; Reader documents keep JSON keyed by tag name,
+	{"genetics": {"name": "genetics", ...}}, and may be null or empty.
+	"""
+	if not raw:
+		return []
+	try:
+		value = json.loads(raw)
+	except (ValueError, TypeError):
+		try:
+			# the highlight form is a Python literal, not JSON -- a tag containing an
+			# apostrophe used to break the old str.replace("'", '"') approach
+			value = ast.literal_eval(raw)
+		except (ValueError, SyntaxError):
+			return []
+	if isinstance(value, dict):
+		return [k if not isinstance(v, dict) else v.get('name', k) for k, v in value.items()]
+	if isinstance(value, list):
+		return [t.get('name') for t in value if isinstance(t, dict) and t.get('name')]
+	return []
+
+
+def makeLabelList():
+	db=sqlite3.connect(MY_DATABASE)
+	c = db.cursor()
+
+	names = []
+	for (raw,) in c.execute("SELECT highTags FROM highlights").fetchall():
+		names.extend(_parseTagField(raw))
+	# Reader documents carry their own labels, and the '#' picker has to offer them
+	# too -- otherwise a Reader-only tag can never be selected.
+	if _tableExists(db, 'reader_documents'):
+		for (raw,) in c.execute("SELECT tags FROM reader_documents").fetchall():
+			names.extend(_parseTagField(raw))
+
+	unique_names = list({n for n in names if n})
 	#log (f"===== UNIQUE TAG NAMES: {unique_names}")
 	
 
