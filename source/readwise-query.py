@@ -135,18 +135,25 @@ def queryItems(database, myInput):
     # highlights meant a Reader-only search could not recognise a tag at all.
     tagList = []
     tagCounts = {}
+    # False when the tags table predates the count columns, in which case no count is
+    # shown at all -- rendering "(0/0)" against every label would be worse than none
+    tagCountsKnown = True
     try:
         try:
             tag_rows = db.execute("SELECT name, high_count, reader_count FROM tags").fetchall()
         except sqlite3.OperationalError:
             # tags table written by an older version, before the counts were added
+            tagCountsKnown = False
             tag_rows = [(r[0], 0, 0) for r in db.execute("SELECT name FROM tags").fetchall()]
         for name, highCount, readerCount in tag_rows:
             tagList.append('#' + name)
-            # show the count for what is actually being searched, so a Reader-only
-            # search does not advertise highlights it will never return
-            tagCounts['#' + name] = ((highCount if SEARCH_READWISE else 0)
-                                     + (readerCount if SEARCH_READER else 0))
+            # Only count what is actually being searched, so a Reader-only search does
+            # not advertise highlights it will never return. When both are searched the
+            # split is shown as highlights/documents, which a single total would hide;
+            # in a single-platform search the second number would always be 0, so it is
+            # left off.
+            tagCounts['#' + name] = (highCount if SEARCH_READWISE else 0,
+                                     readerCount if SEARCH_READER else 0)
     except Exception as e:
         log(f"Tags query failed: {e}")
 
@@ -179,14 +186,20 @@ def queryItems(database, myInput):
 
         mySubset = [i for i in tagList if MYFLAG in i]
         # busiest labels first: with 23 of them, alphabetical-by-chance is not useful
-        mySubset.sort(key=lambda t: (-tagCounts.get(t, 0), t.lower()))
+        mySubset.sort(key=lambda t: (-sum(tagCounts.get(t, (0, 0))), t.lower()))
 
         # adding a complete tag if the user selects it from the list
         if mySubset:
             for thislabel in mySubset:
-                count = tagCounts.get(thislabel, 0)
+                highCount, readerCount = tagCounts.get(thislabel, (0, 0))
+                if not tagCountsKnown:
+                    label = thislabel
+                elif SEARCH_READWISE and SEARCH_READER:
+                    label = f"{thislabel} ({highCount}/{readerCount})"
+                else:
+                    label = f"{thislabel} ({highCount + readerCount})"
                 result["items"].append({
-                "title": f"{thislabel} ({count})" if count else thislabel,
+                "title": label,
                 "subtitle": myInput,
                 "arg": myInput+thislabel+" ",
                 "icon": {
