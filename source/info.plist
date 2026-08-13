@@ -792,7 +792,7 @@ Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/m
 - **A refresh could previously never finish.** Hitting Readwise's rate limit retried forever, and every keystroke could start another sync that rate-limited the others. Fixed.
 - **Searching a word with an apostrophe no longer fails**, and TLS certificate verification is enabled again.
 - **Highlights created from Alfred are now searchable straight away** — they used to be saved without their text.
-- **Pillow is now optional.** A missing `PIL` module no longer stops the workflow; you just lose the QuickLook previews.
+- **A missing `PIL`/Pillow module no longer stops the workflow.** Note that QuickLook previews (⌘Y on a highlight) need Pillow, which is not bundled — install with `pip3 install --user Pillow`. Without it everything else works normally, there is just no preview.
 
 # Motivation ✅
 - Quickly list, search, and open your Readwise highlights and Reader documents
@@ -839,144 +839,144 @@ Create new highlights via the Universal Action.</string>
 		<key>2B458E45-D472-45A6-9D1E-FB6D1E718532</key>
 		<dict>
 			<key>xpos</key>
-			<real>670</real>
+			<real>670.0</real>
 			<key>ypos</key>
-			<real>15</real>
+			<real>15.0</real>
 		</dict>
 		<key>33E46D89-2530-4074-AC50-0C96FDA808EC</key>
 		<dict>
 			<key>xpos</key>
-			<real>150</real>
+			<real>150.0</real>
 			<key>ypos</key>
-			<real>340</real>
+			<real>340.0</real>
 		</dict>
 		<key>37AB99A4-161A-48DE-A1FC-3DEBF8A0AE79</key>
 		<dict>
 			<key>xpos</key>
-			<real>375</real>
+			<real>375.0</real>
 			<key>ypos</key>
-			<real>340</real>
+			<real>340.0</real>
 		</dict>
 		<key>3BA3AB51-3B00-430F-8575-297174A2BF86</key>
 		<dict>
 			<key>xpos</key>
-			<real>675</real>
+			<real>675.0</real>
 			<key>ypos</key>
-			<real>140</real>
+			<real>140.0</real>
 		</dict>
 		<key>56834D1D-55F4-4D51-B8E7-A128C0049C6B</key>
 		<dict>
 			<key>xpos</key>
-			<real>570</real>
+			<real>570.0</real>
 			<key>ypos</key>
-			<real>890</real>
+			<real>890.0</real>
 		</dict>
 		<key>578F2DF9-BCC0-4EFF-BF2B-251A238DCAAB</key>
 		<dict>
 			<key>xpos</key>
-			<real>660</real>
+			<real>660.0</real>
 			<key>ypos</key>
-			<real>875</real>
+			<real>875.0</real>
 		</dict>
 		<key>5D93264C-C597-4BB0-92BD-6144D2819B3E</key>
 		<dict>
 			<key>xpos</key>
-			<real>985</real>
+			<real>985.0</real>
 			<key>ypos</key>
-			<real>330</real>
+			<real>330.0</real>
 		</dict>
 		<key>6AC51F37-B4C7-49A2-A939-B692F85C0578</key>
 		<dict>
 			<key>xpos</key>
-			<real>505</real>
+			<real>505.0</real>
 			<key>ypos</key>
-			<real>15</real>
+			<real>15.0</real>
 		</dict>
 		<key>6C9CF47B-DCA0-44AD-904D-E030DB556EBA</key>
 		<dict>
 			<key>xpos</key>
-			<real>595</real>
+			<real>595.0</real>
 			<key>ypos</key>
-			<real>425</real>
+			<real>425.0</real>
 		</dict>
 		<key>87446133-7FDD-4169-BD42-4A428AEC2F39</key>
 		<dict>
 			<key>xpos</key>
-			<real>1025</real>
+			<real>1025.0</real>
 			<key>ypos</key>
-			<real>90</real>
+			<real>90.0</real>
 		</dict>
 		<key>8E887995-44A7-443C-B49C-E560F3057907</key>
 		<dict>
 			<key>note</key>
 			<string>Create a new card</string>
 			<key>xpos</key>
-			<real>1240</real>
+			<real>1240.0</real>
 			<key>ypos</key>
-			<real>330</real>
+			<real>330.0</real>
 		</dict>
 		<key>AC8986DF-8CE6-476F-AEC6-60DD01FC0DC1</key>
 		<dict>
 			<key>xpos</key>
-			<real>690</real>
+			<real>690.0</real>
 			<key>ypos</key>
-			<real>340</real>
+			<real>340.0</real>
 		</dict>
 		<key>B3184E8D-E901-4771-843D-546BF7633DA4</key>
 		<dict>
 			<key>xpos</key>
-			<real>965</real>
+			<real>965.0</real>
 			<key>ypos</key>
-			<real>700</real>
+			<real>700.0</real>
 		</dict>
 		<key>D7A1F3E2-94B6-4C08-A5D9-3E7F12AB56CD</key>
 		<dict>
 			<key>xpos</key>
-			<real>780</real>
+			<real>780.0</real>
 			<key>ypos</key>
-			<real>560</real>
+			<real>560.0</real>
 		</dict>
 		<key>DE712F62-FBAB-42A3-9DDA-CAAA2EA1F6DC</key>
 		<dict>
 			<key>xpos</key>
-			<real>660</real>
+			<real>660.0</real>
 			<key>ypos</key>
-			<real>760</real>
+			<real>760.0</real>
 		</dict>
 		<key>E3512DF6-3247-46DD-A93E-0CF42BC3F2F7</key>
 		<dict>
 			<key>xpos</key>
-			<real>1025</real>
+			<real>1025.0</real>
 			<key>ypos</key>
-			<real>220</real>
+			<real>220.0</real>
 		</dict>
 		<key>E6EBFFF6-0A4B-4F13-B835-7E60BE6999CB</key>
 		<dict>
 			<key>xpos</key>
-			<real>1480</real>
+			<real>1480.0</real>
 			<key>ypos</key>
-			<real>330</real>
+			<real>330.0</real>
 		</dict>
 		<key>E738C0BD-F1EA-48D3-AEDB-81E988E43700</key>
 		<dict>
 			<key>xpos</key>
-			<real>650</real>
+			<real>650.0</real>
 			<key>ypos</key>
-			<real>580</real>
+			<real>580.0</real>
 		</dict>
 		<key>EC7ED109-7D3E-4ECF-986A-043151DB7901</key>
 		<dict>
 			<key>xpos</key>
-			<real>490</real>
+			<real>490.0</real>
 			<key>ypos</key>
-			<real>550</real>
+			<real>550.0</real>
 		</dict>
 		<key>F4F8B71F-C0EB-4675-9CAF-424BBAE41A4E</key>
 		<dict>
 			<key>xpos</key>
-			<real>690</real>
+			<real>690.0</real>
 			<key>ypos</key>
-			<real>455</real>
+			<real>455.0</real>
 		</dict>
 	</dict>
 	<key>userconfigurationconfig</key>

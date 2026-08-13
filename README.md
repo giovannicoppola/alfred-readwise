@@ -122,10 +122,12 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 - Searching for a word containing an apostrophe failed instead of returning results
 - TLS certificate verification is enabled again on both API calls
 - Highlights created from Alfred were saved without their text, so they could never be found; they are now searchable straight away, with a QuickLook preview
-- A missing `PIL`/Pillow module no longer stops the workflow — previews are simply disabled
+- A missing `PIL`/Pillow module no longer stops the workflow — see the note on QuickLook previews below
 - Books with no cover art show the workflow icon instead of a blank placeholder
 - A blank refresh-rate field no longer crashes every script on startup
-- Improved QuickLook highlight previews, and API error handling with rate-limit retry and timeouts
+- API error handling with rate-limit retry and timeouts
+
+> **A note on QuickLook previews.** <kbd>⌘</kbd><kbd>Y</kbd> on a highlight shows a typeset preview, but that needs the Python **Pillow** library, which is *not* bundled with the workflow — unlike `requests`, Pillow ships compiled code that cannot be vendored for both Apple Silicon and Intel from one copy. Without it the workflow runs normally and simply shows no preview. To enable them: `pip3 install --user Pillow`. Previews are being reworked to drop the dependency entirely — see [#5](https://github.com/giovannicoppola/alfred-readwise/issues/5).
 
 - 04-04-2023: version 0.1
 
