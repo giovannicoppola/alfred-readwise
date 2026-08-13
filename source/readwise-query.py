@@ -242,12 +242,14 @@ def queryItems(database, myInput):
                     'arg': ''
                         })
 
-        # Search Reader documents
+        # Search Reader documents.
+        # Author and site name are always searched here, unlike highlights, where the
+        # scope setting still applies. A Reader document is a whole article, so its
+        # author and source are how you look for it ("that piece by X", "something on
+        # Y"); matching them cannot flood the results the way an author match on a
+        # book does, which would pull in every highlight from it.
         if search_reader:
-            if SEARCH_SCOPE == "All":
-                reader_columns = ["title", "author", "site_name"]
-            else:
-                reader_columns = ["title"]
+            reader_columns = ["title", "author", "site_name"]
 
             keywords = mySearchInput.split()
             reader_params = []
