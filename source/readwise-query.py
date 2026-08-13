@@ -134,10 +134,19 @@ def queryItems(database, myInput):
     # tags, so it is loaded whichever platform is being searched -- loading it only for
     # highlights meant a Reader-only search could not recognise a tag at all.
     tagList = []
+    tagCounts = {}
     try:
-        tag_statement = "SELECT name FROM tags"
-        tag_rows = db.execute(tag_statement).fetchall()
-        tagList = ['#' + row[0] for row in tag_rows]
+        try:
+            tag_rows = db.execute("SELECT name, high_count, reader_count FROM tags").fetchall()
+        except sqlite3.OperationalError:
+            # tags table written by an older version, before the counts were added
+            tag_rows = [(r[0], 0, 0) for r in db.execute("SELECT name FROM tags").fetchall()]
+        for name, highCount, readerCount in tag_rows:
+            tagList.append('#' + name)
+            # show the count for what is actually being searched, so a Reader-only
+            # search does not advertise highlights it will never return
+            tagCounts['#' + name] = ((highCount if SEARCH_READWISE else 0)
+                                     + (readerCount if SEARCH_READER else 0))
     except Exception as e:
         log(f"Tags query failed: {e}")
 
@@ -169,12 +178,15 @@ def queryItems(database, myInput):
         myInput = re.sub(MYFLAG,'',myInput)
 
         mySubset = [i for i in tagList if MYFLAG in i]
+        # busiest labels first: with 23 of them, alphabetical-by-chance is not useful
+        mySubset.sort(key=lambda t: (-tagCounts.get(t, 0), t.lower()))
 
         # adding a complete tag if the user selects it from the list
         if mySubset:
             for thislabel in mySubset:
+                count = tagCounts.get(thislabel, 0)
                 result["items"].append({
-                "title": thislabel,
+                "title": f"{thislabel} ({count})" if count else thislabel,
                 "subtitle": myInput,
                 "arg": myInput+thislabel+" ",
                 "icon": {

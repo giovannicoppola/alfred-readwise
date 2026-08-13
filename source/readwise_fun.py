@@ -684,16 +684,23 @@ def makeLabelList():
 	db=sqlite3.connect(MY_DATABASE)
 	c = db.cursor()
 
-	names = []
+	# Count per tag as well as collecting names, so the '#' picker can show how much
+	# each label holds. Counting here means it costs one pass per sync rather than a
+	# query per keystroke. A tag is counted once per highlight/document, not once per
+	# occurrence.
+	highCounts = {}
+	readerCounts = {}
 	for (raw,) in c.execute("SELECT highTags FROM highlights").fetchall():
-		names.extend(_parseTagField(raw))
+		for name in set(_parseTagField(raw)):
+			highCounts[name] = highCounts.get(name, 0) + 1
 	# Reader documents carry their own labels, and the '#' picker has to offer them
 	# too -- otherwise a Reader-only tag can never be selected.
 	if _tableExists(db, 'reader_documents'):
 		for (raw,) in c.execute("SELECT tags FROM reader_documents").fetchall():
-			names.extend(_parseTagField(raw))
+			for name in set(_parseTagField(raw)):
+				readerCounts[name] = readerCounts.get(name, 0) + 1
 
-	unique_names = list({n for n in names if n})
+	unique_names = [n for n in set(highCounts) | set(readerCounts) if n]
 	#log (f"===== UNIQUE TAG NAMES: {unique_names}")
 	
 
@@ -701,13 +708,16 @@ def makeLabelList():
 	c.execute( "DROP TABLE IF EXISTS tags" )
 	c.execute('''CREATE TABLE tags
 					(id INTEGER PRIMARY KEY,
-					name TEXT NOT NULL)''')
+					name TEXT NOT NULL,
+					high_count INTEGER NOT NULL DEFAULT 0,
+					reader_count INTEGER NOT NULL DEFAULT 0)''')
 
 	# insert the unique names into the table
 
 	for name in unique_names:
 		#log (f"===== inserting: {name}")
-		c.execute('INSERT INTO tags (name) VALUES (?)', (name,))
+		c.execute('INSERT INTO tags (name, high_count, reader_count) VALUES (?, ?, ?)',
+			(name, highCounts.get(name, 0), readerCounts.get(name, 0)))
 
 	# commit the changes and close the connection
 	db.commit()
