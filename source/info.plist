@@ -786,11 +786,9 @@ open "$url"
 ![](alfred-readwise.png)
 Complete readme [here](https://github.com/giovannicoppola/alfred-readwise/blob/main/README.md)
 
-# What's new in 0.4.1 ✨
-- **Label counts follow your search.** Typing `#` part-way through a query now counts each label within what the rest of the query matches, rather than across your whole library, and labels holding nothing are left out.
-
 # What's new in 0.4 ✨
 - **Readwise Reader support.** Search your saved articles alongside your highlights. Set `Search Platform` to Reader, or to Readwise and Readwise Reader for both. Reader documents are matched on title, author and site name.
+- **Labels from both libraries, with counts.** Typing `#` lists your highlight tags and your Reader labels together, each with the number of items it holds. The count follows the rest of your query, so it describes what picking the label would return.
 - **Refreshes are near-instant.** The database now syncs only what changed instead of downloading everything, turning a refresh that took minutes into well under a second.
 - **A refresh could previously never finish.** Hitting Readwise's rate limit retried forever, and every keystroke could start another sync that rate-limited the others. Fixed.
 - **Searching a word with an apostrophe no longer fails**, and TLS certificate verification is enabled again.
@@ -1289,7 +1287,7 @@ Create new highlights via the Universal Action.</string>
 		</dict>
 	</array>
 	<key>version</key>
-	<string>0.4.1</string>
+	<string>0.4</string>
 	<key>webaddress</key>
 	<string>https://github.com/giovannicoppola/alfred-readwise</string>
 </dict>
