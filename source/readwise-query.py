@@ -217,6 +217,17 @@ def queryItems(database, myInput):
                 params.append(likeParam(f'"{tagName}"'))
         return f"WHERE ({conditions}){tagClause}", params
 
+    def tagLabel(raw, favorite=False):
+        """Format a stored tag field for a result subtitle.
+
+        Highlights and Reader documents store their tags differently, but they are
+        the same thing to the reader of a result list, so both render as one badge.
+        """
+        names = sorted(set(_parseTagField(raw)))
+        if not names:
+            return ''
+        return "🏷️ " + ",".join(names) + ('❤️' if favorite else '')
+
     def contextualTagCounts():
         """Count each label within the rows the rest of the query already matches.
 
@@ -323,13 +334,7 @@ def queryItems(database, myInput):
                 totalResults += 1
                 myURL = r['high_readwise_url']
                 myURLall = r['readwise_url']
-                myTags = ''
-                if r['highTags'] != "[]":
-                    myTags = json.loads (r['highTags'].replace("'", '"'))
-                    myTags = ",".join ([x['name'] for x in myTags])
-                    myTags = f"🏷️ {myTags}"
-                    if r['high_is_favorite'] == 1:
-                        myTags = myTags+'❤️'
+                myTags = tagLabel(r['highTags'], r['high_is_favorite'] == 1)
 
                 if r['highURL']:
                     sourceURLstring = f"open source URL"
@@ -388,6 +393,13 @@ def queryItems(database, myInput):
                     subtitle += f" — {r['author']}"
                 if r['category']:
                     subtitle += f" [{r['category']}]"
+                try:
+                    readerTags = tagLabel(r['tags'])
+                except (IndexError, KeyError):
+                    # table written before labels were stored
+                    readerTags = ''
+                if readerTags:
+                    subtitle += f" {readerTags}"
 
                 # ctrl-Enter opens the Reader page itself (browser or Reader app, per
                 # the READER_OPEN_IN setting); cmd-Enter opens the original article,

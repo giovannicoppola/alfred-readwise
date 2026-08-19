@@ -80,6 +80,7 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 	- with both platforms in your results the count is split `highlights/documents` — e.g. `#genetics (12/48)` — since a single total would hide which library the label actually lives in
 	- searching one platform only shows one number, counting just that platform
 	- the count describes what picking the label would return, so it narrows with the rest of your query: `#` on its own counts your whole library, while `lincoln #` counts only among the Lincoln matches. Labels holding nothing in that context are left out
+- labels appear in the result subtitle too, on Reader documents as well as highlights
 - busiest labels are listed first
 - a label filters both libraries independently: `#genetics` returns the highlights tagged `genetics` *and* the Reader documents labelled `genetics`, not everything in a library that happens to have any label
 
