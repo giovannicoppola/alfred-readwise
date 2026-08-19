@@ -15,7 +15,7 @@ import contextlib
 
 
 from config import TOKEN, ARTICLES_CHECK,BOOKS_CHECK, TWEETS_CHECK, PODCASTS_CHECK, SUPPLEMENTALS_CHECK, log, MY_DATABASE, RefRate, IMAGE_FOLDER, IMAGE_H_FOLDER, SEARCH_SCOPE, SEARCH_PLATFORM, READER_OPEN_IN
-from readwise_fun import refreshReadwiseDatabase, makeLabelList, refreshReaderDatabase, rebuildLock, inCooldown, startCooldown, clearCooldown
+from readwise_fun import refreshReadwiseDatabase, makeLabelList, refreshReaderDatabase, rebuildLock, inCooldown, startCooldown, clearCooldown, _parseTagField
 MYINPUT = sys.argv[1].casefold()
 my_checks = {'books': BOOKS_CHECK, 'articles': ARTICLES_CHECK, 'tweets': TWEETS_CHECK, 'podcasts': PODCASTS_CHECK, 'supplementals': SUPPLEMENTALS_CHECK}
 
@@ -152,8 +152,8 @@ def queryItems(database, myInput):
             # split is shown as highlights/documents, which a single total would hide;
             # in a single-platform search the second number would always be 0, so it is
             # left off.
-            tagCounts['#' + name] = (highCount if SEARCH_READWISE else 0,
-                                     readerCount if SEARCH_READER else 0)
+            tagCounts['#' + name] = (highCount if search_readwise else 0,
+                                     readerCount if search_reader else 0)
     except Exception as e:
         log(f"Tags query failed: {e}")
 
@@ -169,10 +169,82 @@ def queryItems(database, myInput):
     tag_params = []
     for currTag  in fullTags:
         if currTag.strip() in tagList: #if it is a real tag
-            mySearchInput = re.sub(currTag, '', mySearchInput).strip()
+            # str.replace, not re.sub: a label is not necessarily a valid regular
+            # expression -- one containing a bracket raised instead of matching
+            mySearchInput = mySearchInput.replace(currTag, '').strip()
             currTag = currTag[1:].strip()
             tag_sql = f"{tag_sql} AND highTags LIKE ? ESCAPE '\\'"
             tag_params.append(likeParam(currTag))
+
+    # Author and site name are always searched on the Reader side, unlike highlights,
+    # where the scope setting still applies. A Reader document is a whole article, so
+    # its author and source are how you look for it ("that piece by X", "something on
+    # Y"); matching them cannot flood the results the way an author match on a book
+    # does, which would pull in every highlight from it.
+    reader_columns = ["title", "author", "site_name"]
+
+    def highlightWhere():
+        """WHERE clause and bound parameters for the highlight search."""
+        columns = ["highText", "title", "author"] if SEARCH_SCOPE == "All" else ["highText"]
+        clauses, params = [], []
+        for kw in mySearchInput.split():
+            clauses.append("(" + " OR ".join(f"{c} LIKE ? ESCAPE '\\'" for c in columns) + ")")
+            params.extend([likeParam(kw)] * len(columns))
+        conditions = " AND ".join(clauses) if clauses else "1=1"
+        # parameter order must follow the placeholders: keywords, categories, tags
+        return (f"WHERE ({conditions}) and category IN ({myTypes}) {tag_sql}",
+                params + types + tag_params)
+
+    def readerWhere():
+        """WHERE clause and bound parameters for the Reader search.
+
+        A tag in the query has to filter Reader documents as well. It used to apply
+        to highlights only, and because the tag text is stripped out of the search
+        string, "#italy" left the Reader side with no conditions at all -- so it
+        returned the entire Reader library alongside the two matching highlights.
+        """
+        clauses, params = [], []
+        for kw in mySearchInput.split():
+            clauses.append("(" + " OR ".join(f"{c} LIKE ? ESCAPE '\\'" for c in reader_columns) + ")")
+            params.extend([likeParam(kw)] * len(reader_columns))
+        conditions = " AND ".join(clauses) if clauses else "1=1"
+        knownTags = [t.lstrip('#') for t in tagList]
+        tagClause = ""
+        for currTag in fullTags:
+            tagName = currTag.lstrip('#').strip()
+            if tagName in knownTags:
+                tagClause += " AND tags LIKE ? ESCAPE '\\'"
+                params.append(likeParam(f'"{tagName}"'))
+        return f"WHERE ({conditions}){tagClause}", params
+
+    def contextualTagCounts():
+        """Count each label within the rows the rest of the query already matches.
+
+        The counts stored in the tags table describe the whole library, which is the
+        right answer only for a bare '#'. With anything else in the box they name a
+        different query from the one the user is about to run -- '#favorite (315/9)'
+        offered above a search that returns five. Both counts go through the same
+        WHERE builders as the result list, so the two can never disagree.
+        """
+        counts = {}
+        def bump(name, isReader):
+            high, reader = counts.get('#' + name, (0, 0))
+            counts['#' + name] = (high, reader + 1) if isReader else (high + 1, reader)
+        if search_readwise:
+            where, params = highlightWhere()
+            for (raw,) in db.execute(f"SELECT highTags FROM highlights {where}", params):
+                # set(): a label counts once per highlight, as in makeLabelList
+                for name in set(_parseTagField(raw)):
+                    bump(name, False)
+        if search_reader:
+            where, params = readerWhere()
+            try:
+                for (raw,) in db.execute(f"SELECT tags FROM reader_documents {where}", params):
+                    for name in set(_parseTagField(raw)):
+                        bump(name, True)
+            except sqlite3.OperationalError as e:
+                log(f"Contextual Reader label counts skipped: {e}")
+        return counts
 
 
     # check if the user is part-way through typing a tag, so the '#' picker can be
@@ -181,10 +253,26 @@ def queryItems(database, myInput):
     if (MYMATCH !=None):
 
         MYFLAG = MYMATCH.group(0).lstrip(' ')
-        mySearchInput = re.sub(MYFLAG,'',myInput)
-        myInput = re.sub(MYFLAG,'',myInput)
+        # str.replace, not re.sub: a part-typed label is not necessarily a valid
+        # regular expression, and typing '#(' raised PatternError rather than simply
+        # matching no label.
+        # mySearchInput already has the completed tags stripped out; myInput keeps them
+        # because it is what gets handed back as the item's argument.
+        mySearchInput = mySearchInput.replace(MYFLAG, '').strip()
+        myInput = myInput.replace(MYFLAG, '')
+
+        # With anything else in the query, count within what it matches rather than
+        # across the whole library, so the number on a label describes the results
+        # picking it would give.
+        contextual = tagCountsKnown and bool(mySearchInput or tag_params)
+        if contextual:
+            tagCounts = contextualTagCounts()
 
         mySubset = [i for i in tagList if MYFLAG in i]
+        if contextual:
+            # a label holding nothing here is a dead end -- offering it only leads to
+            # an empty result list
+            mySubset = [t for t in mySubset if sum(tagCounts.get(t, (0, 0)))]
         # busiest labels first: with 23 of them, alphabetical-by-chance is not useful
         mySubset.sort(key=lambda t: (-sum(tagCounts.get(t, (0, 0))), t.lower()))
 
@@ -194,7 +282,7 @@ def queryItems(database, myInput):
                 highCount, readerCount = tagCounts.get(thislabel, (0, 0))
                 if not tagCountsKnown:
                     label = thislabel
-                elif SEARCH_READWISE and SEARCH_READER:
+                elif search_readwise and search_reader:
                     label = f"{thislabel} ({highCount:,}/{readerCount:,})"
                 else:
                     label = f"{thislabel} ({highCount + readerCount:,})"
@@ -223,28 +311,11 @@ def queryItems(database, myInput):
 
         # Search Readwise highlights
         if search_readwise:
-            if SEARCH_SCOPE == "All":
-                rw_columns = ["highText", "title", "author"]
-            else:
-                rw_columns = ["highText"]
-
-            keywords = mySearchInput.split()
-            kw_params = []
-            if keywords:
-                kw_clauses = []
-                for kw in keywords:
-                    col_matches = [f"{col} LIKE ? ESCAPE '\\'" for col in rw_columns]
-                    kw_clauses.append(f"({' OR '.join(col_matches)})")
-                    kw_params.extend([likeParam(kw)] * len(rw_columns))
-                conditions_str = " AND ".join(kw_clauses)
-            else:
-                conditions_str = "1=1"
-
-            sql = f"SELECT * FROM highlights WHERE ({conditions_str}) and category IN ({myTypes}) {tag_sql}"
+            where, params = highlightWhere()
+            sql = f"SELECT * FROM highlights {where}"
             log (sql)
 
-            # parameter order must follow the placeholders: keywords, then categories, then tags
-            rs = db.execute(sql, kw_params + types + tag_params).fetchall()
+            rs = db.execute(sql, params).fetchall()
             totCount = len(rs)
 
             for r in rs:
@@ -295,34 +366,8 @@ def queryItems(database, myInput):
         # Y"); matching them cannot flood the results the way an author match on a
         # book does, which would pull in every highlight from it.
         if search_reader:
-            reader_columns = ["title", "author", "site_name"]
-
-            keywords = mySearchInput.split()
-            reader_params = []
-            if keywords:
-                kw_clauses = []
-                for kw in keywords:
-                    col_matches = [f"{col} LIKE ? ESCAPE '\\'" for col in reader_columns]
-                    kw_clauses.append(f"({' OR '.join(col_matches)})")
-                    reader_params.extend([likeParam(kw)] * len(reader_columns))
-                reader_conditions = " AND ".join(kw_clauses)
-            else:
-                reader_conditions = "1=1"
-
-            # A tag in the query has to filter Reader documents as well. It used to
-            # apply to highlights only, and because the tag text is stripped out of
-            # the search string, "#italy" left the Reader side with no conditions at
-            # all -- so it returned the entire Reader library alongside the two
-            # matching highlights.
-            reader_tag_sql = ""
-            for currTag in fullTags:
-                tagName = currTag.lstrip('#').strip()
-                if tagName in [t.lstrip('#') for t in tagList]:
-                    reader_tag_sql += " AND tags LIKE ? ESCAPE '\\'"
-                    reader_params.append(likeParam(f'"{tagName}"'))
-
-            reader_sql = (f"SELECT * FROM reader_documents WHERE ({reader_conditions})"
-                          f"{reader_tag_sql} ORDER BY updated_at DESC")
+            where, reader_params = readerWhere()
+            reader_sql = f"SELECT * FROM reader_documents {where} ORDER BY updated_at DESC"
             log(reader_sql)
 
             try:

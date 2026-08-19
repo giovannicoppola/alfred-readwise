@@ -79,6 +79,7 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 - the list covers **both** your highlight tags and your Reader labels, and each one carries a count of how many items it holds, so you can see at a glance whether a label is worth filtering on
 	- with both platforms in your results the count is split `highlights/documents` — e.g. `#genetics (12/48)` — since a single total would hide which library the label actually lives in
 	- searching one platform only shows one number, counting just that platform
+	- the count describes what picking the label would return, so it narrows with the rest of your query: `#` on its own counts your whole library, while `lincoln #` counts only among the Lincoln matches. Labels holding nothing in that context are left out
 - busiest labels are listed first
 - a label filters both libraries independently: `#genetics` returns the highlights tagged `genetics` *and* the Reader documents labelled `genetics`, not everything in a library that happens to have any label
 
@@ -129,6 +130,7 @@ On a **Reader document**:
 
 <h1 id="changelog">Changelog 🧰</h1>
 
+- **19-08-2026: version 0.4.1** — label counts in the `#` picker now follow the rest of the query instead of counting the whole library. [Full release notes →](https://github.com/giovannicoppola/alfred-readwise/releases/tag/v0.4.1)
 - **18-08-2026: version 0.4** — Readwise Reader support, near-instant incremental refreshes, labels from both libraries with counts, and a batch of fixes. [Full release notes →](https://github.com/giovannicoppola/alfred-readwise/releases/tag/v0.4)
 - 10-05-2023: version 0.3
 - 04-04-2023: version 0.1
