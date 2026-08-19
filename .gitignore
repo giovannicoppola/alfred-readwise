@@ -3,3 +3,7 @@
 __pycache__
 prefs.plist
 lib
+
+# unreferenced icon working files
+source/icons/ChatGPT Image*
+source/icons/resized.png
