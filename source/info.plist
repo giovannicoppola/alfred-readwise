@@ -146,6 +146,78 @@
 				<false/>
 			</dict>
 		</array>
+		<key>A1D0C6E8-3F41-4C9B-8E5D-2B7A9F014C31</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>B2E1D7F9-4A52-4D0C-9F6E-3C8B0A125D42</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>A7D6C2E4-9F07-4C51-E4B3-812A5F670293</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>C3F2E8A0-5B63-4E1D-A07F-4D9C1B236E53</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string>Open the full HTML report</string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>E5B4A0C2-7D85-4A3F-C291-6F1E3D458071</string>
+				<key>modifiers</key>
+				<integer>1048576</integer>
+				<key>modifiersubtext</key>
+				<string>Copy this summary as Markdown</string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>B2E1D7F9-4A52-4D0C-9F6E-3C8B0A125D42</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>C3F2E8A0-5B63-4E1D-A07F-4D9C1B236E53</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string>Open the full HTML report</string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>E5B4A0C2-7D85-4A3F-C291-6F1E3D458071</string>
+				<key>modifiers</key>
+				<integer>1048576</integer>
+				<key>modifiersubtext</key>
+				<string>Copy this summary as Markdown</string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>C3F2E8A0-5B63-4E1D-A07F-4D9C1B236E53</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>D4A3F9B1-6C74-4F2E-B180-5E0D2C347F64</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
 		<key>D7A1F3E2-94B6-4C08-A5D9-3E7F12AB56CD</key>
 		<array>
 			<dict>
@@ -176,6 +248,19 @@
 			<dict>
 				<key>destinationuid</key>
 				<string>E738C0BD-F1EA-48D3-AEDB-81E988E43700</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>F6C5B1D3-8E96-4B40-D3A2-701F4E569182</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>A7D6C2E4-9F07-4C51-E4B3-812A5F670293</string>
 				<key>modifiers</key>
 				<integer>0</integer>
 				<key>modifiersubtext</key>
@@ -779,6 +864,165 @@ open "$url"
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argumenttype</key>
+				<integer>2</integer>
+				<key>keyword</key>
+				<string>{var:favkeyword}</string>
+				<key>subtext</key>
+				<string>stats on the highlights you starred, against the rest of your library</string>
+				<key>text</key>
+				<string>Readwise favorites report ❤️</string>
+				<key>withspace</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.keyword</string>
+			<key>uid</key>
+			<string>A1D0C6E8-3F41-4C9B-8E5D-2B7A9F014C31</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>behaviour</key>
+				<integer>2</integer>
+				<key>fontmode</key>
+				<integer>0</integer>
+				<key>fontsizing</key>
+				<integer>0</integer>
+				<key>footertext</key>
+				<string></string>
+				<key>inputfile</key>
+				<string>readwise_favstats.sh</string>
+				<key>inputtype</key>
+				<integer>1</integer>
+				<key>loadingtext</key>
+				<string>crunching your favorites… ⏳</string>
+				<key>outputmode</key>
+				<integer>0</integer>
+				<key>scriptinput</key>
+				<integer>0</integer>
+				<key>spellchecking</key>
+				<integer>0</integer>
+				<key>stackview</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.userinterface.text</string>
+			<key>uid</key>
+			<string>B2E1D7F9-4A52-4D0C-9F6E-3C8B0A125D42</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argument</key>
+				<string>{var:statsReportPath}</string>
+				<key>passthroughargument</key>
+				<false/>
+				<key>variables</key>
+				<dict/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.argument</string>
+			<key>uid</key>
+			<string>C3F2E8A0-5B63-4E1D-A07F-4D9C1B236E53</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>openwith</key>
+				<string></string>
+				<key>sourcefile</key>
+				<string></string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.openfile</string>
+			<key>uid</key>
+			<string>D4A3F9B1-6C74-4F2E-B180-5E0D2C347F64</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>autopaste</key>
+				<false/>
+				<key>clipboardtext</key>
+				<string>{var:statsReportMarkdown}</string>
+				<key>ignoredynamicplaceholders</key>
+				<false/>
+				<key>transient</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.clipboard</string>
+			<key>uid</key>
+			<string>E5B4A0C2-7D85-4A3F-C291-6F1E3D458071</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argumenttype</key>
+				<integer>2</integer>
+				<key>keyword</key>
+				<string>{var:librarykeyword}</string>
+				<key>subtext</key>
+				<string>authors, sources, length and timeline across everything you have highlighted</string>
+				<key>text</key>
+				<string>Readwise library report 📚</string>
+				<key>withspace</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.keyword</string>
+			<key>uid</key>
+			<string>F6C5B1D3-8E96-4B40-D3A2-701F4E569182</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>behaviour</key>
+				<integer>2</integer>
+				<key>fontmode</key>
+				<integer>0</integer>
+				<key>fontsizing</key>
+				<integer>0</integer>
+				<key>footertext</key>
+				<string></string>
+				<key>inputfile</key>
+				<string>readwise_libstats.sh</string>
+				<key>inputtype</key>
+				<integer>1</integer>
+				<key>loadingtext</key>
+				<string>crunching your library… ⏳</string>
+				<key>outputmode</key>
+				<integer>0</integer>
+				<key>scriptinput</key>
+				<integer>0</integer>
+				<key>spellchecking</key>
+				<integer>0</integer>
+				<key>stackview</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.userinterface.text</string>
+			<key>uid</key>
+			<string>A7D6C2E4-9F07-4C51-E4B3-812A5F670293</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
 	</array>
 	<key>readme</key>
 	<string># alfred-readwise
@@ -916,6 +1160,20 @@ Create new highlights via the Universal Action.</string>
 			<key>ypos</key>
 			<real>330</real>
 		</dict>
+		<key>A1D0C6E8-3F41-4C9B-8E5D-2B7A9F014C31</key>
+		<dict>
+			<key>xpos</key>
+			<real>150</real>
+			<key>ypos</key>
+			<real>1080</real>
+		</dict>
+		<key>A7D6C2E4-9F07-4C51-E4B3-812A5F670293</key>
+		<dict>
+			<key>xpos</key>
+			<real>375</real>
+			<key>ypos</key>
+			<real>1290</real>
+		</dict>
 		<key>AC8986DF-8CE6-476F-AEC6-60DD01FC0DC1</key>
 		<dict>
 			<key>xpos</key>
@@ -923,12 +1181,33 @@ Create new highlights via the Universal Action.</string>
 			<key>ypos</key>
 			<real>340</real>
 		</dict>
+		<key>B2E1D7F9-4A52-4D0C-9F6E-3C8B0A125D42</key>
+		<dict>
+			<key>xpos</key>
+			<real>375</real>
+			<key>ypos</key>
+			<real>1080</real>
+		</dict>
 		<key>B3184E8D-E901-4771-843D-546BF7633DA4</key>
 		<dict>
 			<key>xpos</key>
 			<real>965</real>
 			<key>ypos</key>
 			<real>700</real>
+		</dict>
+		<key>C3F2E8A0-5B63-4E1D-A07F-4D9C1B236E53</key>
+		<dict>
+			<key>xpos</key>
+			<real>620</real>
+			<key>ypos</key>
+			<real>1150</real>
+		</dict>
+		<key>D4A3F9B1-6C74-4F2E-B180-5E0D2C347F64</key>
+		<dict>
+			<key>xpos</key>
+			<real>830</real>
+			<key>ypos</key>
+			<real>1150</real>
 		</dict>
 		<key>D7A1F3E2-94B6-4C08-A5D9-3E7F12AB56CD</key>
 		<dict>
@@ -950,6 +1229,13 @@ Create new highlights via the Universal Action.</string>
 			<real>985</real>
 			<key>ypos</key>
 			<real>215</real>
+		</dict>
+		<key>E5B4A0C2-7D85-4A3F-C291-6F1E3D458071</key>
+		<dict>
+			<key>xpos</key>
+			<real>620</real>
+			<key>ypos</key>
+			<real>1230</real>
 		</dict>
 		<key>E6EBFFF6-0A4B-4F13-B835-7E60BE6999CB</key>
 		<dict>
@@ -978,6 +1264,13 @@ Create new highlights via the Universal Action.</string>
 			<real>690</real>
 			<key>ypos</key>
 			<real>455</real>
+		</dict>
+		<key>F6C5B1D3-8E96-4B40-D3A2-701F4E569182</key>
+		<dict>
+			<key>xpos</key>
+			<real>150</real>
+			<key>ypos</key>
+			<real>1290</real>
 		</dict>
 	</dict>
 	<key>userconfigurationconfig</key>
@@ -1044,6 +1337,48 @@ Create new highlights via the Universal Action.</string>
 			<string>textfield</string>
 			<key>variable</key>
 			<string>fullrebuildkeyword</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string>!rfav</string>
+				<key>placeholder</key>
+				<string></string>
+				<key>required</key>
+				<false/>
+				<key>trim</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string>Report on the highlights you have starred in Readwise: which authors, how long, and when you added them — each measured against the rest of your library.</string>
+			<key>label</key>
+			<string>Favorites report keyword</string>
+			<key>type</key>
+			<string>textfield</string>
+			<key>variable</key>
+			<string>favkeyword</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string>!rstats</string>
+				<key>placeholder</key>
+				<string></string>
+				<key>required</key>
+				<false/>
+				<key>trim</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string>Report on your whole highlights library: which authors and sources it is made of, how long your highlights run, and when you added them.</string>
+			<key>label</key>
+			<string>Library report keyword</string>
+			<key>type</key>
+			<string>textfield</string>
+			<key>variable</key>
+			<string>librarykeyword</string>
 		</dict>
 		<dict>
 			<key>config</key>

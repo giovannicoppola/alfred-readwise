@@ -18,6 +18,8 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 - [Motivation](#motivation)
 - [Setting up](#setting-up)
 - [Basic Usage](#usage)
+- [Favorites report](#favorites)
+- [Library report](#library)
 - [Known Issues](#known-issues)
 - [Acknowledgments](#acknowledgments)
 - [Changelog](#changelog)
@@ -48,6 +50,8 @@ src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubuserc
 	- set the keyword for the workflow (default: `!r`)
 	- set the keyword to force refresh (default: `readwise:refresh`) — syncs only what changed
 	- set the keyword for a full rebuild (default: `readwise:rebuild`) — downloads everything again
+	- set the keyword for the favorites report (default: `!rfav`)
+	- set the keyword for the library report (default: `!rstats`)
 	- set the Readwise API token (login into your account, then copy it [here](https://readwise.io/access_token))
 	- set what to show in results: `books`, `tweets`, `supplementals`, `articles`, `podcasts`
 	- set refresh rate (in days). Default: `30`
@@ -109,6 +113,75 @@ On a **Reader document**:
 	- `readwise:rebuild` — download everything again from scratch. Slower (minutes for a large library, as the API rate-limits long syncs), but it is the only way to remove highlights you deleted in Readwise, since an incremental sync cannot see deletions. This also runs automatically every 30 days.
 
 
+<h1 id="favorites">Favorites report ❤️</h1>
+
+`!rfav` (configurable) opens a report on the highlights you have **starred** in Readwise. Every
+figure is given against the rest of your library, because a count on its own says very little: 14
+favorites from one author is only interesting once you know whether you have 20 highlights from
+them or 2,000.
+
+The report opens in Alfred as a Markdown panel covering:
+
+- **Authors** — who you star most, each against every highlight you have from them, with a `×`
+  showing how much more (or less) often than your library-wide rate you starred them. A second,
+  shorter list ranks the authors you star most *readily*, among those you have at least 10
+  highlights from.
+- **Length** — mean and median characters and words for your favorites, the rest of your library
+  and the whole of it, plus how the two distributions differ.
+- **Timeline** — a GitHub-style contribution calendar of the last 53 weeks, a compact all-time grid
+  with one cell per month, and your busiest day, busiest month and longest streak.
+- **Where they come from** — books, articles, tweets, podcasts and supplementals, each with its own
+  favorite rate.
+- **Most recent** — your five newest favorites, each linking straight to Readwise.
+
+### Modifiers ⌨️
+- `enter` ↩️ opens the full **HTML report** in your browser: every favorite you have, grouped by
+  source, each linking to Readwise and to its original URL, with a filter box, the calendar in
+  colour, and the complete author table
+- `command-enter` ⌘↩️ copies the Markdown summary to the clipboard
+
+The HTML report is rewritten every time you run the keyword, and lives next to the database in the
+workflow's data folder, so it survives updates of the workflow itself.
+
+<h1 id="library">Library report 📚</h1>
+
+`!rstats` (configurable) is the same report for your **whole** library rather than the starred
+part of it, on the same axes and with the same modifiers. Each slice is measured against the
+library as a whole:
+
+- **Your own highlights vs supplementals** — Readwise attaches a set of popular highlights to many
+  books, and those *supplementals* are not passages you marked. They can easily outnumber the ones
+  that are, so the report leads with the split — count, share, sources, authors, mean length and
+  starred rate on both sides — rather than letting them quietly inflate every figure below.
+- **Authors** — who you highlight most, their share of the library, and their mean highlight length
+  against your library-wide average. Each row carries how many of its highlights are supplementals,
+  since an author can sit near the top of the list without you ever having highlighted them
+  yourself. Plus how concentrated your reading is: what share your top 10 and top 50 authors
+  account for.
+- **Most highlighted sources** — the books and articles you drew most from, each marked with its
+  type (a whole source is either supplemental or not) and how many of them you starred.
+- **Length** — mean, median, longest, shortest and total, in characters and in words, with the
+  distribution.
+- **Timeline** — the same calendars, plus busiest day, busiest month and longest streak.
+- **Where they come from** — each category's share, its mean length against the library average,
+  and the share of it you starred.
+
+Its HTML report deliberately **does not list the highlights themselves**: at several thousand of
+them the page would be enormous. It carries the complete author and source tables instead —
+searching your highlights is what the main keyword is for, and the favorites report is where the
+quotes live.
+
+### Notes on both reports
+- They read your Readwise **highlights** only. Readwise Reader documents are not covered: they
+  carry no favorite flag, and a Reader document is a whole article rather than a passage, so it
+  has no comparable length.
+- They count *all* your highlights, whether or not their category is ticked in the workflow
+  configuration; the category breakdown makes the split explicit.
+- Alfred's Markdown only makes `http`/`https` links clickable, so the link to each report's HTML
+  page is the <kbd>↩</kbd> action rather than a link in the text. The links to individual
+  highlights are ordinary Markdown links and work as you would expect.
+
+
 <h1 id="known-issues">Limitations & known issues ⚠️</h1>
 
 - **QuickLook previews need Pillow.** <kbd>⌘</kbd><kbd>Y</kbd> on a highlight shows a typeset preview, but that needs the Python **Pillow** library, which is *not* bundled with the workflow — unlike `requests`, Pillow ships compiled code that cannot be vendored for both Apple Silicon and Intel from one copy. Without it the workflow runs normally and simply shows no preview. To enable them: `pip3 install --user Pillow`. Previews are being reworked to drop the dependency entirely — see [#5](https://github.com/giovannicoppola/alfred-readwise/issues/5).
@@ -132,7 +205,7 @@ On a **Reader document**:
 <h1 id="changelog">Changelog 🧰</h1>
 
 - **version 0.5 (upcoming)** — favorites and library reports (`!rfav` / `!rstats`), and a fix for the author showing as "None" on highlights added from Alfred.
-- **19-08-2026: version 0.4** — Readwise Reader support, near-instant incremental refreshes, labels from both libraries with counts, and a batch of fixes. [Full release notes →](https://github.com/giovannicoppola/alfred-readwise/releases/tag/v0.4)
+- **2026-08-19: version 0.4** — Readwise Reader support, near-instant incremental refreshes, labels from both libraries with counts, and a batch of fixes. [Full release notes →](https://github.com/giovannicoppola/alfred-readwise/releases/tag/v0.4)
 - 10-05-2023: version 0.3
 - 04-04-2023: version 0.1
 

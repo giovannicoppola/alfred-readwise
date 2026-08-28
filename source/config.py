@@ -57,3 +57,9 @@ if not os.path.exists(IMAGE_FOLDER):
 
 if not os.path.exists(IMAGE_H_FOLDER):
     os.makedirs(IMAGE_H_FOLDER)
+
+# The two stats reports are regenerated on every run of their keyword and live
+# beside the database, in the workflow's data folder, so they survive an update
+# of the workflow itself.
+FAV_REPORT = f"{DATA_FOLDER}/favorites-report.html"
+LIB_REPORT = f"{DATA_FOLDER}/library-report.html"
