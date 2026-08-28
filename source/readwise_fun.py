@@ -80,6 +80,15 @@ def _normalize_body(text):
 	return "\n\n".join(p for p in cleaned if p)
 
 
+def _cleanAuthor(author):
+	# Readwise books created with no author (eg. the "Highlights from Alfred"
+	# book this workflow posts to) come back from the API with the literal
+	# string "None" rather than a JSON null, so a plain truthiness check
+	# doesn't catch it.
+	author = (author or '').strip()
+	return '' if author == 'None' else author
+
+
 def _load_font(candidates, size):
 	key = (tuple(candidates), size)
 	if key in _FONT_CACHE:
@@ -123,6 +132,7 @@ def createImage(highText, highAuthor, highTitle, highID):
 		return
 
 	out_path = f"{IMAGE_H_FOLDER}{highID}.jpg"
+	highAuthor = _cleanAuthor(highAuthor)
 
 	body_font = _load_font(_SERIF_CANDIDATES, 30)
 	footer_font = _load_font(_SANS_CANDIDATES, 20)

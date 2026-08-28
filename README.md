@@ -131,6 +131,7 @@ On a **Reader document**:
 
 <h1 id="changelog">Changelog 🧰</h1>
 
+- **version 0.5 (upcoming)** — favorites and library reports (`!rfav` / `!rstats`), and a fix for the author showing as "None" on highlights added from Alfred.
 - **19-08-2026: version 0.4** — Readwise Reader support, near-instant incremental refreshes, labels from both libraries with counts, and a batch of fixes. [Full release notes →](https://github.com/giovannicoppola/alfred-readwise/releases/tag/v0.4)
 - 10-05-2023: version 0.3
 - 04-04-2023: version 0.1

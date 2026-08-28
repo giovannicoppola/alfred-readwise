@@ -15,7 +15,7 @@ import contextlib
 
 
 from config import TOKEN, ARTICLES_CHECK,BOOKS_CHECK, TWEETS_CHECK, PODCASTS_CHECK, SUPPLEMENTALS_CHECK, log, MY_DATABASE, RefRate, IMAGE_FOLDER, IMAGE_H_FOLDER, SEARCH_SCOPE, SEARCH_PLATFORM, READER_OPEN_IN
-from readwise_fun import refreshReadwiseDatabase, makeLabelList, refreshReaderDatabase, rebuildLock, inCooldown, startCooldown, clearCooldown, _parseTagField
+from readwise_fun import refreshReadwiseDatabase, makeLabelList, refreshReaderDatabase, rebuildLock, inCooldown, startCooldown, clearCooldown, _parseTagField, _cleanAuthor
 MYINPUT = sys.argv[1].casefold()
 my_checks = {'books': BOOKS_CHECK, 'articles': ARTICLES_CHECK, 'tweets': TWEETS_CHECK, 'podcasts': PODCASTS_CHECK, 'supplementals': SUPPLEMENTALS_CHECK}
 
@@ -341,13 +341,16 @@ def queryItems(database, myInput):
                 else:
                     sourceURLstring = "no source URL"
                 myQuickLook = f"{IMAGE_H_FOLDER}{r['highID']}.jpg"
+                bookAuthor = _cleanAuthor(r['author'])
+                titleAuthor = f"{r['title']}-{bookAuthor}" if bookAuthor else r['title']
+                fullAttribution = f"*{bookAuthor}*: **{r['title']}**" if bookAuthor else f"**{r['title']}**"
                 result["items"].append({
                     "title": r['highText'],
-                    'subtitle': f"{myCounter:,}/{totCount:,} {r['title']}-{r['author']} {myTags}",
+                    'subtitle': f"{myCounter:,}/{totCount:,} {titleAuthor} {myTags}",
                     'valid': True,
                     "quicklookurl": myQuickLook,
                     'variables': {
-                        "fullOutput": f"> {r['highText']}\n\n— *{r['author']}*: **{r['title']}**",
+                        "fullOutput": f"> {r['highText']}\n\n— {fullAttribution}",
                         "myURL": myURL,
                         "myStatus": 'completed',
                         "myURLall": myURLall
@@ -389,8 +392,9 @@ def queryItems(database, myInput):
                 totalResults += 1
 
                 subtitle = f"📖 Reader {readerCounter:,}/{readerCount:,}"
-                if r['author']:
-                    subtitle += f" — {r['author']}"
+                readerAuthor = _cleanAuthor(r['author'])
+                if readerAuthor:
+                    subtitle += f" — {readerAuthor}"
                 if r['category']:
                     subtitle += f" [{r['category']}]"
                 try:
@@ -420,7 +424,7 @@ def queryItems(database, myInput):
 
                 title = r['title'] or '(no title)'
                 fullParts = [f"## {title}"]
-                author = r['author'] or ''
+                author = readerAuthor
                 if author:
                     fullParts.append(f"*{author}*")
                 try:
