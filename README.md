@@ -145,6 +145,8 @@ workflow's data folder, so it survives updates of the workflow itself.
 
 <h1 id="library">Library report 📚</h1>
 
+![Library report](images/library-report.png)
+
 `!rstats` (configurable) is the same report for your **whole** library rather than the starred
 part of it, on the same axes and with the same modifiers. Each slice is measured against the
 library as a whole:
